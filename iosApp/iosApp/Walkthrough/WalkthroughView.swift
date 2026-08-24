@@ -6,43 +6,53 @@ struct WalkthroughView: View {
     var onFinished: (() -> Void)? = nil
     
     var body: some View {
-        ZStack {
-            Color(UIColor.systemBackground)
-                .ignoresSafeArea()
-            
-            if viewModel.state.isCompleted {
-                completedView
-                    .transition(.opacity.combined(with: .scale))
-            } else {
-                contentView
-                    .transition(.opacity)
+        NavigationView {
+            ZStack {
+                Color(uiColor: .systemGroupedBackground)
+                    .ignoresSafeArea()
+                
+                if viewModel.state.isCompleted {
+                    completedView
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.92).combined(with: .opacity),
+                            removal: .opacity
+                        ))
+                } else {
+                    contentView
+                        .transition(.opacity)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if !viewModel.state.isCompleted && !viewModel.state.isLastPage {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                                viewModel.onSkip()
+                            }
+                        }) {
+                            Text("Lewati")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: viewModel.state.currentIndex)
-        .animation(.easeInOut(duration: 0.3), value: viewModel.state.isCompleted)
+        .navigationViewStyle(.stack)
+        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: viewModel.state.currentIndex)
+        .animation(.spring(response: 0.38, dampingFraction: 0.8), value: viewModel.state.isCompleted)
+        .onChange(of: viewModel.state.isCompleted) { completed in
+            if completed {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
     }
     
     // MARK: - Main Content View
     private var contentView: some View {
         VStack(spacing: 0) {
-            // Header: Skip button
-            HStack {
-                Spacer()
-                if !viewModel.state.isLastPage {
-                    Button(action: {
-                        viewModel.onSkip()
-                    }) {
-                        Text("Lewati")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                    }
-                }
-            }
-            .frame(height: 44)
-            .padding(.horizontal)
-            
             Spacer()
             
             // Slide Card
@@ -50,8 +60,8 @@ struct WalkthroughView: View {
                 slideView(item: currentItem)
                     .id(currentItem.id)
                     .transition(.asymmetric(
-                        insertion: .opacity.combined(with: .offset(x: 40)),
-                        removal: .opacity.combined(with: .offset(x: -40))
+                        insertion: .opacity.combined(with: .offset(x: 35)),
+                        removal: .opacity.combined(with: .offset(x: -35))
                     ))
             }
             
@@ -59,42 +69,52 @@ struct WalkthroughView: View {
             
             // Footer: Indicators and Buttons
             VStack(spacing: 28) {
-                // Indicators
+                // Page Indicators with 44pt accessible touch target
                 pageIndicators
                 
                 // Action Buttons
                 HStack(spacing: 12) {
                     if !viewModel.state.isFirstPage {
                         Button(action: {
-                            viewModel.onPrevious()
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                viewModel.onPrevious()
+                            }
                         }) {
-                            HStack {
+                            HStack(spacing: 6) {
                                 Image(systemName: "chevron.left")
+                                    .font(.subheadline.weight(.semibold))
                                 Text("Sebelumnya")
                             }
                             .font(.headline.weight(.medium))
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
                             .foregroundColor(.primary)
-                            .background(Color(UIColor.secondarySystemBackground))
-                            .cornerRadius(16)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
+                        .buttonStyle(AppleScaleButtonStyle())
                     }
                     
                     Button(action: {
-                        viewModel.onNext()
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.onNext()
+                        }
                     }) {
-                        HStack {
+                        HStack(spacing: 6) {
                             Text(viewModel.state.isLastPage ? "Mulai Sekarang" : "Lanjut")
                             Image(systemName: viewModel.state.isLastPage ? "checkmark.circle.fill" : "chevron.right")
+                                .font(.subheadline.weight(.semibold))
                         }
                         .font(.headline.weight(.semibold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .foregroundColor(.white)
                         .background(Color.accentColor)
-                        .cornerRadius(16)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
+                    .buttonStyle(AppleScaleButtonStyle())
                 }
             }
             .padding(.horizontal, 24)
@@ -108,26 +128,26 @@ struct WalkthroughView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 32, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
-                    .frame(width: 140, height: 140)
+                    .frame(width: 130, height: 130)
                 
                 Image(systemName: getSfSymbol(for: item.iconName))
-                    .font(.system(size: 56, weight: .medium))
+                    .font(.system(size: 54, weight: .medium))
                     .foregroundColor(.accentColor)
             }
-            .padding(.bottom, 16)
+            .padding(.bottom, 12)
             
             Text(item.title)
-                .font(.title2.bold())
+                .font(.title2.weight(.bold))
                 .multilineTextAlignment(.center)
                 .foregroundColor(.primary)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
             
             Text(item.description_)
                 .font(.body)
                 .multilineTextAlignment(.center)
                 .foregroundColor(.secondary)
                 .lineSpacing(4)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 28)
         }
     }
     
@@ -137,10 +157,16 @@ struct WalkthroughView: View {
             ForEach(0..<Int(viewModel.state.totalPages), id: \.self) { index in
                 let isSelected = index == Int(viewModel.state.currentIndex)
                 Capsule()
-                    .fill(isSelected ? Color.accentColor : Color(UIColor.systemGray4))
-                    .frame(width: isSelected ? 24 : 8, height: 8)
+                    .fill(isSelected ? Color.accentColor : Color(uiColor: .systemGray4))
+                    .frame(width: isSelected ? 26 : 8, height: 8)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+                    .frame(minWidth: 44, minHeight: 44) // 44pt tap target
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        viewModel.onSelectPage(index: index)
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            viewModel.onSelectPage(index: index)
+                        }
                     }
             }
         }
@@ -154,15 +180,15 @@ struct WalkthroughView: View {
             ZStack {
                 Circle()
                     .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 110, height: 110)
+                    .frame(width: 100, height: 100)
                 
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 64))
+                    .font(.system(size: 60, weight: .medium))
                     .foregroundColor(.accentColor)
             }
             
             Text("Siap Digunakan!")
-                .font(.title.bold())
+                .font(.title.weight(.bold))
                 .foregroundColor(.primary)
             
             Text("Anda telah menyelesaikan panduan awal. Selamat menjelajah aplikasi!")
@@ -175,6 +201,7 @@ struct WalkthroughView: View {
             
             VStack(spacing: 12) {
                 Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     onFinished?()
                 }) {
                     Text("Masuk ke Beranda")
@@ -183,20 +210,25 @@ struct WalkthroughView: View {
                         .frame(height: 52)
                         .foregroundColor(.white)
                         .background(Color.accentColor)
-                        .cornerRadius(16)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
+                .buttonStyle(AppleScaleButtonStyle())
                 
                 Button(action: {
-                    viewModel.onRestart()
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                        viewModel.onRestart()
+                    }
                 }) {
                     Text("Ulangi Panduan")
                         .font(.headline.weight(.medium))
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .foregroundColor(.secondary)
-                        .background(Color(UIColor.secondarySystemBackground))
-                        .cornerRadius(16)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
+                .buttonStyle(AppleScaleButtonStyle())
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)

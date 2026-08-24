@@ -16,8 +16,13 @@ Saat mengeksekusi pembuatan fitur, ikuti urutan langkah berikut:
    * Buat composable screen menggunakan Jetpack Compose.
    * Hubungkan `Store.subscribe` dengan Compose State (`remember { mutableStateOf(...) }`).
 3. **iOS UI (`iosApp/iosApp/<Feature>/`)**:
-   * Buat SwiftUI View.
-   * Buat `ObservableObject` wrapper di Swift untuk mengamati perubahan state dari KMP `Store`.
+   * Buat SwiftUI View yang mematuhi **Apple Human Interface Guidelines (HIG)**:
+     - Gunakan `@FocusState` & Keyboard Toolbar untuk pengalaman pengetikan native.
+     - Integrasikan **Haptic Feedback** (`UIImpactFeedbackGenerator`, `UINotificationFeedbackGenerator`) pada tap, error, dan success.
+     - Terapkan animasi spring yang mulus (`withAnimation(.spring(...))`).
+     - Gunakan pola modalitas yang tepat (`.sheet` atau `.fullScreenCover`) dengan gesture dismissal.
+     - Gunakan semantic colors (`Color(.systemGroupedBackground)`, dll.) dan Dynamic Type.
+   * Buat `ObservableObject` wrapper di Swift (`@MainActor`) untuk mengamati perubahan state dari KMP `Store`.
 
 ## 2. Template Kode MVI Store di `sharedLogic`
 ```kotlin

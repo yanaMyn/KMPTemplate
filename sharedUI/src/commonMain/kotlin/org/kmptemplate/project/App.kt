@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import kmptemplate.sharedui.generated.resources.Res
 import kmptemplate.sharedui.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
+import org.kmptemplate.project.auth.LoginScreen
+import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.walkthrough.WalkthroughScreen
 
 @Composable
@@ -29,11 +31,21 @@ import org.kmptemplate.project.walkthrough.WalkthroughScreen
 fun App() {
     MaterialTheme {
         var showWalkthrough by remember { mutableStateOf(false) }
+        var showLogin by remember { mutableStateOf(false) }
+        var loggedInUser by remember { mutableStateOf<User?>(null) }
         var showContent by remember { mutableStateOf(false) }
 
         if (showWalkthrough) {
             WalkthroughScreen(
                 onFinished = { showWalkthrough = false }
+            )
+        } else if (showLogin) {
+            LoginScreen(
+                onLoginSuccess = { user ->
+                    loggedInUser = user
+                    showLogin = false
+                },
+                onBack = { showLogin = false }
             )
         } else {
             Column(
@@ -44,8 +56,27 @@ fun App() {
                     .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                if (loggedInUser != null) {
+                    Text(
+                        text = "Halo, ${loggedInUser?.name} (${loggedInUser?.email})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(onClick = { loggedInUser = null }) {
+                        Text("Logout")
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 Button(onClick = { showContent = !showContent }) {
                     Text("Click me!")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(onClick = { showLogin = true }) {
+                    Text("Buka Halaman Login")
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

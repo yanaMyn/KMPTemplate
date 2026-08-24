@@ -6,14 +6,11 @@ alwaysApply: true
 
 # KMP Architecture and Coding Guidelines
 
-Follow the centralized project rules in `.agents/`:
-- **Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+Read these rules files FIRST before performing any action:
+- **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
+- **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+- **Apple HIG:** `.agents/rules/apple-hig-guidelines.md`
 - **Planner:** `.agents/skills/kmp-planner/SKILL.md`
 - **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
 - **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
 - **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`
-
-## Key Constraints
-- Keep `sharedLogic/` pure Kotlin without platform-specific UI frameworks.
-- Do NOT touch `build.gradle.kts`, `local.properties`, `gradle.properties`, or `iosApp.xcodeproj/`.
-- Validate via `./gradlew :sharedLogic:build`.

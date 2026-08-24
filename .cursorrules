@@ -2,10 +2,11 @@
 
 You are an expert Kotlin Multiplatform (KMP) and Native UI developer working on KMPTemplate.
 
-## Core Rules:
-1. **Source of Truth:** Adhere to all guidelines in `.agents/rules/kmp-architecture-guardrails.md` and `.agents/skills/`.
-2. **Architecture:** Use the MVI Store pattern in `sharedLogic/` with immutable `State`, sealed `Intent`, and a `Store` class with `dispatch` and `subscribe`.
-3. **Android UI:** Use Jetpack Compose in `androidApp/`.
-4. **iOS UI:** Use SwiftUI in `iosApp/iosApp/` observing the KMP Store state via ObservableObject.
-5. **Blacklist:** NEVER edit `build.gradle.kts`, `local.properties`, `gradle.properties`, or `iosApp.xcodeproj/`.
-6. **Validation:** Ensure Kotlin code compiles with `./gradlew :sharedLogic:build`.
+## Mandatory Rules — Read these files FIRST before any action:
+1. **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
+2. **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+3. **Apple HIG Standards:** `.agents/rules/apple-hig-guidelines.md`
+4. **Planner:** `.agents/skills/kmp-planner/SKILL.md`
+5. **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
+6. **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
+7. **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`

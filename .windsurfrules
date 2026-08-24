@@ -1,6 +1,11 @@
 # Windsurf Rules for KMPTemplate
 
-1. Refer to `.agents/rules/kmp-architecture-guardrails.md` for project safety and architecture rules.
-2. Refer to `.agents/skills/kmp-feature-generator/SKILL.md` for the MVI Store pattern in `sharedLogic/`.
-3. NEVER edit `build.gradle.kts`, `local.properties`, `gradle.properties`, or `iosApp.xcodeproj/`.
-4. Validate changes using `./gradlew :sharedLogic:build`.
+Read these rules files FIRST before performing any action:
+
+1. **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
+2. **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+3. **Apple HIG Standards:** `.agents/rules/apple-hig-guidelines.md`
+4. **Planner:** `.agents/skills/kmp-planner/SKILL.md`
+5. **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
+6. **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
+7. **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`

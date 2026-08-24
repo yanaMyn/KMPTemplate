@@ -1,13 +1,11 @@
 # GitHub Copilot Instructions for KMPTemplate
 
-## Project Architecture
-This repository is a **Kotlin Multiplatform (KMP)** project with:
-- Business Logic: `sharedLogic/src/commonMain/kotlin` using MVI Store pattern.
-- Android UI: `androidApp/src/main/kotlin` using Jetpack Compose.
-- iOS UI: `iosApp/iosApp` using SwiftUI.
+Read these rules files FIRST before performing any action:
 
-## Instructions
-1. Follow all design patterns defined in `.agents/skills/kmp-feature-generator/SKILL.md`.
-2. Do not modify build files (`build.gradle.kts`, `gradle.properties`, `local.properties`).
-3. Maintain immutable states in data classes and exhaustive sealed classes for intents.
-4. When writing tests, place them in `sharedLogic/src/commonTest/kotlin` following `.agents/skills/kmp-qa-runner/SKILL.md`.
+1. **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
+2. **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+3. **Apple HIG Standards:** `.agents/rules/apple-hig-guidelines.md`
+4. **Planner:** `.agents/skills/kmp-planner/SKILL.md`
+5. **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
+6. **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
+7. **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`

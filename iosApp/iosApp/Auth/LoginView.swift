@@ -4,6 +4,7 @@ import SharedLogic
 struct LoginView: View {
     @StateObject private var viewModel = LoginViewModel()
     var onLoginSuccess: ((User) -> Void)? = nil
+    var onNavigateToRegister: (() -> Void)? = nil
     var onBack: (() -> Void)? = nil
     
     var body: some View {
@@ -31,6 +32,7 @@ struct LoginView: View {
                 } else {
                     LoginFormSwiftUIView(
                         viewModel: viewModel,
+                        onNavigateToRegister: onNavigateToRegister,
                         onBack: onBack
                     )
                     .transition(.opacity)
@@ -73,6 +75,7 @@ struct LoginView: View {
 
 private struct LoginFormSwiftUIView: View {
     @ObservedObject var viewModel: LoginViewModel
+    var onNavigateToRegister: (() -> Void)?
     var onBack: (() -> Void)?
     
     private enum FormField: Hashable {
@@ -264,7 +267,24 @@ private struct LoginFormSwiftUIView: View {
                 .disabled(viewModel.state.isLoading)
                 .buttonStyle(AppleScaleButtonStyle())
                 .padding(.top, 4)
-                
+
+                // Cross-link to Register
+                if let onNavigateToRegister = onNavigateToRegister {
+                    Button(action: {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        focusedField = nil
+                        onNavigateToRegister()
+                    }) {
+                        Text("Belum punya akun? ")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        + Text("Daftar")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(.accentColor)
+                    }
+                    .frame(minHeight: 44)
+                }
+
                 // Demo Credentials Quick Actions
                 VStack(spacing: 12) {
                     Text("Akun Demo Cepat (Klik untuk isi)")

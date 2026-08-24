@@ -29,6 +29,12 @@ class LoginStoreTest {
             }
             return Result.failure(IllegalArgumentException("Kredensial tidak valid"))
         }
+
+        override fun register(name: String, email: String, password: String): Result<User> {
+            return Result.failure(
+                IllegalStateException("Registrasi tidak digunakan pada LoginStoreTest")
+            )
+        }
     }
 
     private fun createStore(): LoginStore {

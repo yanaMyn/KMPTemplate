@@ -4,8 +4,19 @@ import SharedLogic
 struct ContentView: View {
     @State private var showContent = false
     @State private var showWalkthrough = false
-    @State private var showLogin = false
+    @State private var authSheet: AuthSheet? = nil
+    @State private var pendingAuthSheet: AuthSheet? = nil
     @State private var loggedInUser: User? = nil
+
+    /// Layar autentikasi yang dapat ditampilkan sebagai sheet.
+    /// Satu modifier `.sheet(item:)` dipakai untuk keduanya agar tidak ada
+    /// dua sheet yang saling bertumpuk saat berpindah Login <-> Register.
+    private enum AuthSheet: String, Identifiable {
+        case login
+        case register
+
+        var id: String { rawValue }
+    }
     
     var body: some View {
         NavigationView {
@@ -59,7 +70,7 @@ struct ContentView: View {
                     VStack(spacing: 12) {
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                            showLogin = true
+                            authSheet = .login
                         }) {
                             HStack(spacing: 12) {
                                 ZStack {
@@ -87,6 +98,37 @@ struct ContentView: View {
                         }
                         .buttonStyle(AppleScaleButtonStyle())
                         
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            authSheet = .register
+                        }) {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.accentColor.opacity(0.12))
+                                        .frame(width: 36, height: 36)
+                                    Image(systemName: "person.badge.plus")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(.accentColor)
+                                }
+
+                                Text("Buat Akun Baru")
+                                    .font(.headline.weight(.semibold))
+                                    .foregroundColor(.primary)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 18)
+                            .frame(height: 56)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        }
+                        .buttonStyle(AppleScaleButtonStyle())
+
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             showWalkthrough = true
@@ -161,24 +203,58 @@ struct ContentView: View {
             .navigationTitle("KMPTemplate")
         }
         .navigationViewStyle(.stack)
-        .sheet(isPresented: $showLogin) {
-            LoginView(
-                onLoginSuccess: { user in
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        loggedInUser = user
+        .sheet(item: $authSheet, onDismiss: presentPendingAuthSheet) { sheet in
+            switch sheet {
+            case .login:
+                LoginView(
+                    onLoginSuccess: { user in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            loggedInUser = user
+                        }
+                        authSheet = nil
+                    },
+                    onNavigateToRegister: {
+                        switchAuthSheet(to: .register)
+                    },
+                    onBack: {
+                        authSheet = nil
                     }
-                    showLogin = false
-                },
-                onBack: {
-                    showLogin = false
-                }
-            )
+                )
+            case .register:
+                RegisterView(
+                    onRegisterSuccess: { user in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            loggedInUser = user
+                        }
+                        authSheet = nil
+                    },
+                    onNavigateToLogin: {
+                        switchAuthSheet(to: .login)
+                    },
+                    onBack: {
+                        authSheet = nil
+                    }
+                )
+            }
         }
         .fullScreenCover(isPresented: $showWalkthrough) {
             WalkthroughView(onFinished: {
                 showWalkthrough = false
             })
         }
+    }
+
+    /// Menutup sheet aktif lalu menandai sheet berikutnya untuk ditampilkan
+    /// setelah animasi dismiss selesai (lihat `presentPendingAuthSheet`).
+    private func switchAuthSheet(to destination: AuthSheet) {
+        pendingAuthSheet = destination
+        authSheet = nil
+    }
+
+    private func presentPendingAuthSheet() {
+        guard let pending = pendingAuthSheet else { return }
+        pendingAuthSheet = nil
+        authSheet = pending
     }
 }
 

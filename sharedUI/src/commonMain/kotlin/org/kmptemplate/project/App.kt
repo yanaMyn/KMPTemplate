@@ -23,6 +23,7 @@ import kmptemplate.sharedui.generated.resources.Res
 import kmptemplate.sharedui.generated.resources.compose_multiplatform
 import org.jetbrains.compose.resources.painterResource
 import org.kmptemplate.project.auth.LoginScreen
+import org.kmptemplate.project.auth.RegisterScreen
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.walkthrough.WalkthroughScreen
 
@@ -32,6 +33,7 @@ fun App() {
     MaterialTheme {
         var showWalkthrough by remember { mutableStateOf(false) }
         var showLogin by remember { mutableStateOf(false) }
+        var showRegister by remember { mutableStateOf(false) }
         var loggedInUser by remember { mutableStateOf<User?>(null) }
         var showContent by remember { mutableStateOf(false) }
 
@@ -45,7 +47,23 @@ fun App() {
                     loggedInUser = user
                     showLogin = false
                 },
+                onNavigateToRegister = {
+                    showLogin = false
+                    showRegister = true
+                },
                 onBack = { showLogin = false }
+            )
+        } else if (showRegister) {
+            RegisterScreen(
+                onRegisterSuccess = { user ->
+                    loggedInUser = user
+                    showRegister = false
+                },
+                onNavigateToLogin = {
+                    showRegister = false
+                    showLogin = true
+                },
+                onBack = { showRegister = false }
             )
         } else {
             Column(
@@ -77,6 +95,12 @@ fun App() {
 
                 Button(onClick = { showLogin = true }) {
                     Text("Buka Halaman Login")
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(onClick = { showRegister = true }) {
+                    Text("Buat Akun Baru (Register)")
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))

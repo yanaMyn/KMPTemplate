@@ -25,15 +25,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.kmptemplate.project.auth.model.User
-import org.kmptemplate.project.auth.mvi.LoginIntent
-import org.kmptemplate.project.auth.mvi.LoginState
-import org.kmptemplate.project.auth.mvi.LoginStore
+import org.kmptemplate.project.auth.mvi.RegisterIntent
+import org.kmptemplate.project.auth.mvi.RegisterState
+import org.kmptemplate.project.auth.mvi.RegisterStore
 
 @Composable
-fun LoginScreen(
-    store: LoginStore = remember { LoginStore() },
-    onLoginSuccess: (User) -> Unit = {},
-    onNavigateToRegister: () -> Unit = {},
+fun RegisterScreen(
+    store: RegisterStore = remember { RegisterStore() },
+    onRegisterSuccess: (User) -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     var state by remember { mutableStateOf(store.state) }
@@ -51,17 +51,17 @@ fun LoginScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        if (state.isSuccess && state.loggedInUser != null) {
-            LoginSuccessView(
-                user = state.loggedInUser!!,
-                onContinue = { onLoginSuccess(state.loggedInUser!!) },
-                onLogout = { store.dispatch(LoginIntent.Reset) }
+        if (state.isSuccess && state.registeredUser != null) {
+            RegisterSuccessView(
+                user = state.registeredUser!!,
+                onContinue = { onRegisterSuccess(state.registeredUser!!) },
+                onRegisterAgain = { store.dispatch(RegisterIntent.Reset) }
             )
         } else {
-            LoginFormView(
+            RegisterFormView(
                 state = state,
                 onIntent = { store.dispatch(it) },
-                onNavigateToRegister = onNavigateToRegister,
+                onNavigateToLogin = onNavigateToLogin,
                 onBack = onBack
             )
         }
@@ -69,10 +69,10 @@ fun LoginScreen(
 }
 
 @Composable
-private fun LoginFormView(
-    state: LoginState,
-    onIntent: (LoginIntent) -> Unit,
-    onNavigateToRegister: () -> Unit,
+private fun RegisterFormView(
+    state: RegisterState,
+    onIntent: (RegisterIntent) -> Unit,
+    onNavigateToLogin: () -> Unit,
     onBack: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -106,13 +106,13 @@ private fun LoginFormView(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Text(text = "🔐", fontSize = 38.sp)
+            Text(text = "📝", fontSize = 38.sp)
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         Text(
-            text = "Selamat Datang Kembali",
+            text = "Buat Akun Baru",
             style = MaterialTheme.typography.headlineMedium.copy(
                 fontWeight = FontWeight.Bold
             ),
@@ -123,7 +123,7 @@ private fun LoginFormView(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Masuk ke akun KMPTemplate Anda",
+            text = "Daftar untuk mulai menggunakan KMPTemplate",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -159,13 +159,39 @@ private fun LoginFormView(
             }
         }
 
+        // Name Input Field
+        OutlinedTextField(
+            value = state.name,
+            onValueChange = { onIntent(RegisterIntent.NameChanged(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Nama Lengkap") },
+            placeholder = { Text("contoh: Budi Santoso") },
+            singleLine = true,
+            isError = state.nameError != null,
+            supportingText = {
+                state.nameError?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
         // Email Input Field
         OutlinedTextField(
             value = state.email,
-            onValueChange = { onIntent(LoginIntent.EmailChanged(it)) },
+            onValueChange = { onIntent(RegisterIntent.EmailChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Email") },
-            placeholder = { Text("contoh: admin@kmptemplate.org") },
+            placeholder = { Text("contoh: nama@kmptemplate.org") },
             singleLine = true,
             isError = state.emailError != null,
             supportingText = {
@@ -188,7 +214,7 @@ private fun LoginFormView(
         // Password Input Field
         OutlinedTextField(
             value = state.password,
-            onValueChange = { onIntent(LoginIntent.PasswordChanged(it)) },
+            onValueChange = { onIntent(RegisterIntent.PasswordChanged(it)) },
             modifier = Modifier.fillMaxWidth(),
             label = { Text("Kata Sandi") },
             placeholder = { Text("Minimal 6 karakter") },
@@ -196,7 +222,7 @@ private fun LoginFormView(
             isError = state.passwordError != null,
             visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
-                TextButton(onClick = { onIntent(LoginIntent.TogglePasswordVisibility) }) {
+                TextButton(onClick = { onIntent(RegisterIntent.TogglePasswordVisibility) }) {
                     Text(
                         text = if (state.isPasswordVisible) "Sembunyikan" else "Lihat",
                         style = MaterialTheme.typography.labelSmall
@@ -210,16 +236,82 @@ private fun LoginFormView(
             },
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Confirm Password Input Field
+        OutlinedTextField(
+            value = state.confirmPassword,
+            onValueChange = { onIntent(RegisterIntent.ConfirmPasswordChanged(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("Konfirmasi Kata Sandi") },
+            placeholder = { Text("Ulangi kata sandi") },
+            singleLine = true,
+            isError = state.confirmPasswordError != null,
+            visualTransformation = if (state.isConfirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                TextButton(onClick = { onIntent(RegisterIntent.ToggleConfirmPasswordVisibility) }) {
+                    Text(
+                        text = if (state.isConfirmPasswordVisible) "Sembunyikan" else "Lihat",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            },
+            supportingText = {
+                state.confirmPasswordError?.let {
+                    Text(text = it, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
                 imeAction = ImeAction.Done
             ),
             keyboardActions = KeyboardActions(
                 onDone = {
                     focusManager.clearFocus()
-                    onIntent(LoginIntent.SubmitLogin)
+                    onIntent(RegisterIntent.SubmitRegister)
                 }
             ),
             shape = RoundedCornerShape(12.dp)
         )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Terms & Conditions Checkbox
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = state.isTermsAccepted,
+                onCheckedChange = { onIntent(RegisterIntent.ToggleTermsAccepted) }
+            )
+            Text(
+                text = "Saya menyetujui Syarat & Ketentuan",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        AnimatedVisibility(visible = state.termsError != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                Text(
+                    text = state.termsError ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -227,7 +319,7 @@ private fun LoginFormView(
         Button(
             onClick = {
                 focusManager.clearFocus()
-                onIntent(LoginIntent.SubmitLogin)
+                onIntent(RegisterIntent.SubmitRegister)
             },
             modifier = Modifier
                 .fillMaxWidth()
@@ -243,7 +335,7 @@ private fun LoginFormView(
                 )
             } else {
                 Text(
-                    text = "Masuk",
+                    text = "Daftar",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
             }
@@ -251,71 +343,21 @@ private fun LoginFormView(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Cross-link to Register
-        TextButton(onClick = onNavigateToRegister) {
+        // Cross-link to Login
+        TextButton(onClick = onNavigateToLogin) {
             Text(
-                text = "Belum punya akun? Daftar",
+                text = "Sudah punya akun? Masuk",
                 style = MaterialTheme.typography.bodyMedium
             )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Quick Demo Credentials Section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Akun Demo Cepat (Klik untuk isi)",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = {
-                            onIntent(LoginIntent.EmailChanged("admin@kmptemplate.org"))
-                            onIntent(LoginIntent.PasswordChanged("Password123!"))
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Admin Demo", fontSize = 12.sp)
-                    }
-                    FilledTonalButton(
-                        onClick = {
-                            onIntent(LoginIntent.EmailChanged("user@kmptemplate.org"))
-                            onIntent(LoginIntent.PasswordChanged("Password123!"))
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("User Demo", fontSize = 12.sp)
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun LoginSuccessView(
+private fun RegisterSuccessView(
     user: User,
     onContinue: () -> Unit,
-    onLogout: () -> Unit
+    onRegisterAgain: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -338,7 +380,7 @@ private fun LoginSuccessView(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Login Berhasil!",
+            text = "Pendaftaran Berhasil!",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
             textAlign = TextAlign.Center
         )
@@ -346,7 +388,7 @@ private fun LoginSuccessView(
         Spacer(modifier = Modifier.height(10.dp))
 
         Text(
-            text = "Selamat datang kembali, ${user.name}!",
+            text = "Selamat datang, ${user.name}!",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center
@@ -376,13 +418,13 @@ private fun LoginSuccessView(
         Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedButton(
-            onClick = onLogout,
+            onClick = onRegisterAgain,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
             shape = RoundedCornerShape(14.dp)
         ) {
-            Text("Keluar (Logout)")
+            Text("Daftar Akun Lain")
         }
     }
 }

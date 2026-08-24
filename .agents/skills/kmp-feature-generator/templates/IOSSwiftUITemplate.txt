@@ -1,0 +1,39 @@
+// LOCATION: iosApp/iosApp/Features/FeatureScreen.swift
+
+import SwiftUI
+import shared // Mengimpor modul shared KMP
+
+struct \(FeatureName)Screen: View {
+    // Mengamati State dari Swift wrapper/ViewModel yang menjembatani KMP Flow
+    @ObservedObject var viewModel: \(FeatureName)ObservableViewModel
+
+    var body: some View {
+        NavigationView {
+            ZconfigureView()
+                .navigationTitle("\(FeatureName)")
+        }
+    }
+
+    @ViewBuilder
+    private func ZconfigureView() -> some View {
+        if viewModel.state.isLoading {
+            ProgressView()
+        } else {
+            VStack(spacing: 16) {
+                Text("Data: \(viewModel.state.data)")
+
+                Button(action: {
+                    // Mengirim Intent balik ke Shared Logic MVI Kotlin
+                    viewModel.dispatch(intent: \(FeatureName)Intent.RefreshData())
+                }) {
+                    Text("Refresh Data")
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+            }
+            .padding()
+        }
+    }
+}

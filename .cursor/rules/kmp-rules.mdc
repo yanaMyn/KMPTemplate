@@ -1,0 +1,19 @@
+---
+description: KMP MVI Architecture and Native UI Guidelines
+globs: **/*.kt, **/*.swift, **/*.kts
+alwaysApply: true
+---
+
+# KMP Architecture and Coding Guidelines
+
+Follow the centralized project rules in `.agents/`:
+- **Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+- **Planner:** `.agents/skills/kmp-planner/SKILL.md`
+- **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
+- **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
+- **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`
+
+## Key Constraints
+- Keep `sharedLogic/` pure Kotlin without platform-specific UI frameworks.
+- Do NOT touch `build.gradle.kts`, `local.properties`, `gradle.properties`, or `iosApp.xcodeproj/`.
+- Validate via `./gradlew :sharedLogic:build`.

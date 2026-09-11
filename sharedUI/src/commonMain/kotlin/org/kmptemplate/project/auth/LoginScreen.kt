@@ -36,16 +36,7 @@ fun LoginScreen(
     onNavigateToRegister: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
-    var state by remember { mutableStateOf(store.state) }
-
-    DisposableEffect(store) {
-        val unsubscribe = store.subscribe { newState ->
-            state = newState
-        }
-        onDispose {
-            unsubscribe()
-        }
-    }
+    val state by store.state.collectAsState()
 
     Surface(
         modifier = Modifier.fillMaxSize(),

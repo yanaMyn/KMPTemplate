@@ -7,21 +7,22 @@ final class RegisterViewModel: ObservableObject {
     @Published var state: RegisterState
 
     private let store: RegisterStore
-    private var unsubscribe: (() -> Void)?
+    private var stateTask: Task<Void, Never>?
 
     init(store: RegisterStore = RegisterStore(repository: AuthRepositoryImpl(dataSource: DefaultAuthDataSource()))) {
         self.store = store
-        self.state = store.state
+        self.state = store.state.value
 
-        self.unsubscribe = store.subscribe { [weak self] newState in
-            DispatchQueue.main.async {
-                self?.state = newState
+        self.stateTask = Task { [weak self] in
+            guard let self else { return }
+            for await newState in self.store.state {
+                self.state = newState
             }
         }
     }
 
     deinit {
-        unsubscribe?()
+        stateTask?.cancel()
     }
 
     func onNameChange(_ name: String) {
@@ -54,10 +55,6 @@ final class RegisterViewModel: ObservableObject {
 
     func onSubmit() {
         store.dispatch(intent: RegisterIntent.SubmitRegister())
-    }
-
-    func onClearErrors() {
-        store.dispatch(intent: RegisterIntent.ClearErrors())
     }
 
     func onReset() {

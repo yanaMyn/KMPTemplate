@@ -1,5 +1,9 @@
 package org.kmptemplate.project.auth.mvi
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.kmptemplate.project.auth.data.AuthRepository
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
@@ -51,11 +55,8 @@ sealed class RegisterIntent {
 class RegisterStore(
     private val repository: AuthRepository = AuthRepositoryImpl()
 ) {
-    private var _state = RegisterState()
-    val state: RegisterState
-        get() = _state
-
-    private val listeners = mutableListOf<(RegisterState) -> Unit>()
+    private val _state = MutableStateFlow(RegisterState())
+    val state: StateFlow<RegisterState> = _state.asStateFlow()
 
     fun dispatch(intent: RegisterIntent) {
         when (intent) {
@@ -72,29 +73,15 @@ class RegisterStore(
         }
     }
 
-    private fun updateState(newState: RegisterState) {
-        _state = newState
-        notifyListeners()
-    }
-
-    private fun notifyListeners() {
-        val currentState = _state
-        listeners.forEach { it(currentState) }
-    }
-
     private fun handleNameChanged(name: String) {
         val nameError = if (name.isNotEmpty() && name.trim().length < MIN_NAME_LENGTH) {
             "Nama minimal $MIN_NAME_LENGTH karakter"
         } else {
             null
         }
-        updateState(
-            _state.copy(
-                name = name,
-                nameError = nameError,
-                generalError = null
-            )
-        )
+        _state.update {
+            it.copy(name = name, nameError = nameError, generalError = null)
+        }
     }
 
     private fun handleEmailChanged(email: String) {
@@ -103,13 +90,9 @@ class RegisterStore(
         } else {
             null
         }
-        updateState(
-            _state.copy(
-                email = email,
-                emailError = emailError,
-                generalError = null
-            )
-        )
+        _state.update {
+            it.copy(email = email, emailError = emailError, generalError = null)
+        }
     }
 
     private fun handlePasswordChanged(password: String) {
@@ -118,54 +101,53 @@ class RegisterStore(
         } else {
             null
         }
-        // Konfirmasi divalidasi ulang agar error "tidak sama" hilang otomatis
-        // ketika pengguna memperbaiki kata sandi utamanya.
-        val confirmPasswordError = validateConfirmMatch(password, _state.confirmPassword)
-        updateState(
-            _state.copy(
+        _state.update {
+            val confirmPasswordError = validateConfirmMatch(password, it.confirmPassword)
+            it.copy(
                 password = password,
                 passwordError = passwordError,
                 confirmPasswordError = confirmPasswordError,
                 generalError = null
             )
-        )
+        }
     }
 
     private fun handleConfirmPasswordChanged(confirmPassword: String) {
-        val confirmPasswordError = validateConfirmMatch(_state.password, confirmPassword)
-        updateState(
-            _state.copy(
+        _state.update {
+            val confirmPasswordError = validateConfirmMatch(it.password, confirmPassword)
+            it.copy(
                 confirmPassword = confirmPassword,
                 confirmPasswordError = confirmPasswordError,
                 generalError = null
             )
-        )
+        }
     }
 
     private fun handleTogglePasswordVisibility() {
-        updateState(_state.copy(isPasswordVisible = !_state.isPasswordVisible))
+        _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
 
     private fun handleToggleConfirmPasswordVisibility() {
-        updateState(_state.copy(isConfirmPasswordVisible = !_state.isConfirmPasswordVisible))
+        _state.update { it.copy(isConfirmPasswordVisible = !it.isConfirmPasswordVisible) }
     }
 
     private fun handleToggleTermsAccepted() {
-        val isTermsAccepted = !_state.isTermsAccepted
-        updateState(
-            _state.copy(
-                isTermsAccepted = isTermsAccepted,
-                termsError = if (isTermsAccepted) null else _state.termsError,
+        _state.update {
+            val newTerms = !it.isTermsAccepted
+            it.copy(
+                isTermsAccepted = newTerms,
+                termsError = if (newTerms) null else it.termsError,
                 generalError = null
             )
-        )
+        }
     }
 
     private fun handleSubmitRegister() {
-        val name = _state.name.trim()
-        val email = _state.email.trim()
-        val password = _state.password.trim()
-        val confirmPassword = _state.confirmPassword.trim()
+        val current = _state.value
+        val name = current.name.trim()
+        val email = current.email.trim()
+        val password = current.password.trim()
+        val confirmPassword = current.confirmPassword.trim()
 
         var hasError = false
         var nameErr: String? = null
@@ -206,14 +188,14 @@ class RegisterStore(
             hasError = true
         }
 
-        if (!_state.isTermsAccepted) {
+        if (!current.isTermsAccepted) {
             termsErr = "Anda harus menyetujui Syarat & Ketentuan"
             hasError = true
         }
 
         if (hasError) {
-            updateState(
-                _state.copy(
+            _state.update {
+                it.copy(
                     nameError = nameErr,
                     emailError = emailErr,
                     passwordError = passwordErr,
@@ -221,39 +203,39 @@ class RegisterStore(
                     termsError = termsErr,
                     generalError = "Mohon lengkapi formulir dengan benar"
                 )
-            )
+            }
             return
         }
 
-        updateState(_state.copy(isLoading = true, generalError = null))
+        _state.update { it.copy(isLoading = true, generalError = null) }
 
         val result = repository.register(name, email, password)
         result.fold(
             onSuccess = { user ->
-                updateState(
-                    _state.copy(
+                _state.update {
+                    it.copy(
                         isLoading = false,
                         isSuccess = true,
                         registeredUser = user,
                         generalError = null
                     )
-                )
+                }
             },
             onFailure = { error ->
-                updateState(
-                    _state.copy(
+                _state.update {
+                    it.copy(
                         isLoading = false,
                         isSuccess = false,
                         generalError = error.message ?: "Gagal mendaftar. Silakan coba lagi."
                     )
-                )
+                }
             }
         )
     }
 
     private fun handleClearErrors() {
-        updateState(
-            _state.copy(
+        _state.update {
+            it.copy(
                 nameError = null,
                 emailError = null,
                 passwordError = null,
@@ -261,11 +243,11 @@ class RegisterStore(
                 termsError = null,
                 generalError = null
             )
-        )
+        }
     }
 
     private fun handleReset() {
-        updateState(RegisterState())
+        _state.value = RegisterState()
     }
 
     private fun validateConfirmMatch(password: String, confirmPassword: String): String? {
@@ -278,18 +260,6 @@ class RegisterStore(
 
     private fun isValidEmail(email: String): Boolean {
         return email.contains("@") && email.substringAfter("@").contains(".")
-    }
-
-    /**
-     * Subscribe to state updates. Returns an unsubscribe function.
-     * Invokes listener immediately with the current state.
-     */
-    fun subscribe(listener: (RegisterState) -> Unit): () -> Unit {
-        listeners.add(listener)
-        listener(_state)
-        return {
-            listeners.remove(listener)
-        }
     }
 
     private companion object {

@@ -31,7 +31,7 @@ class WalkthroughStoreTest {
     @Test
     fun testInitialState() {
         val store = createStore()
-        val state = store.state
+        val state = store.state.value
 
         assertFalse(state.isLoading)
         assertEquals(3, state.items.size)
@@ -47,7 +47,7 @@ class WalkthroughStoreTest {
         val store = createStore()
         store.dispatch(WalkthroughIntent.NextPage)
 
-        val state = store.state
+        val state = store.state.value
         assertEquals(1, state.currentIndex)
         assertEquals("Page 2", state.currentItem?.title)
         assertFalse(state.isFirstPage)
@@ -58,52 +58,53 @@ class WalkthroughStoreTest {
     fun testPreviousPage() {
         val store = createStore()
         store.dispatch(WalkthroughIntent.NextPage)
-        assertEquals(1, store.state.currentIndex)
+        assertEquals(1, store.state.value.currentIndex)
 
         store.dispatch(WalkthroughIntent.PreviousPage)
-        assertEquals(0, store.state.currentIndex)
+        assertEquals(0, store.state.value.currentIndex)
 
         store.dispatch(WalkthroughIntent.PreviousPage)
-        assertEquals(0, store.state.currentIndex)
+        assertEquals(0, store.state.value.currentIndex)
     }
 
     @Test
     fun testNextPageOnLastPageCompletes() {
         val store = createStore()
         store.dispatch(WalkthroughIntent.SelectPage(2))
-        assertTrue(store.state.isLastPage)
+        assertTrue(store.state.value.isLastPage)
 
         store.dispatch(WalkthroughIntent.NextPage)
-        assertTrue(store.state.isCompleted)
+        assertTrue(store.state.value.isCompleted)
     }
 
     @Test
     fun testSkipIntent() {
         val store = createStore()
         store.dispatch(WalkthroughIntent.Skip)
-        assertTrue(store.state.isCompleted)
+        assertTrue(store.state.value.isCompleted)
     }
 
     @Test
     fun testCompleteIntent() {
         val store = createStore()
         store.dispatch(WalkthroughIntent.Complete)
-        assertTrue(store.state.isCompleted)
+        assertTrue(store.state.value.isCompleted)
     }
 
     @Test
-    fun testSubscriptionUpdates() {
+    fun testStateFlowReflectsUpdates() {
         val store = createStore()
-        val states = mutableListOf<WalkthroughState>()
-        val unsubscribe = store.subscribe { states.add(it) }
+        val flow = store.state
+
+        assertEquals(0, flow.value.currentIndex)
 
         store.dispatch(WalkthroughIntent.NextPage)
+        assertEquals(1, flow.value.currentIndex)
+
         store.dispatch(WalkthroughIntent.NextPage)
-        unsubscribe()
+        assertEquals(2, flow.value.currentIndex)
+
         store.dispatch(WalkthroughIntent.PreviousPage)
-
-        // initial state + 2 next page updates = 3
-        assertEquals(3, states.size)
-        assertEquals(2, states.last().currentIndex)
+        assertEquals(1, flow.value.currentIndex)
     }
 }

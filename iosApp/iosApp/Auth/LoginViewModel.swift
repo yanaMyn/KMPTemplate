@@ -5,45 +5,42 @@ import SharedLogic
 @MainActor
 final class LoginViewModel: ObservableObject {
     @Published var state: LoginState
-    
+
     private let store: LoginStore
-    private var unsubscribe: (() -> Void)?
-    
+    private var stateTask: Task<Void, Never>?
+
     init(store: LoginStore = LoginStore(repository: AuthRepositoryImpl(dataSource: DefaultAuthDataSource()))) {
         self.store = store
-        self.state = store.state
-        
-        self.unsubscribe = store.subscribe { [weak self] newState in
-            DispatchQueue.main.async {
-                self?.state = newState
+        self.state = store.state.value
+
+        self.stateTask = Task { [weak self] in
+            guard let self else { return }
+            for await newState in self.store.state {
+                self.state = newState
             }
         }
     }
-    
+
     deinit {
-        unsubscribe?()
+        stateTask?.cancel()
     }
-    
+
     func onEmailChange(_ email: String) {
         store.dispatch(intent: LoginIntent.EmailChanged(email: email))
     }
-    
+
     func onPasswordChange(_ password: String) {
         store.dispatch(intent: LoginIntent.PasswordChanged(password: password))
     }
-    
+
     func onTogglePasswordVisibility() {
         store.dispatch(intent: LoginIntent.TogglePasswordVisibility())
     }
-    
+
     func onSubmit() {
         store.dispatch(intent: LoginIntent.SubmitLogin())
     }
-    
-    func onClearErrors() {
-        store.dispatch(intent: LoginIntent.ClearErrors())
-    }
-    
+
     func onReset() {
         store.dispatch(intent: LoginIntent.Reset())
     }

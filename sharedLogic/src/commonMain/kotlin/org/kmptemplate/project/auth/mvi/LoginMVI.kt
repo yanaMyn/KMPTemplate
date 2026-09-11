@@ -1,5 +1,9 @@
 package org.kmptemplate.project.auth.mvi
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.kmptemplate.project.auth.data.AuthRepository
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
@@ -35,11 +39,8 @@ sealed class LoginIntent {
 class LoginStore(
     private val repository: AuthRepository = AuthRepositoryImpl()
 ) {
-    private var _state = LoginState()
-    val state: LoginState
-        get() = _state
-
-    private val listeners = mutableListOf<(LoginState) -> Unit>()
+    private val _state = MutableStateFlow(LoginState())
+    val state: StateFlow<LoginState> = _state.asStateFlow()
 
     fun dispatch(intent: LoginIntent) {
         when (intent) {
@@ -52,29 +53,15 @@ class LoginStore(
         }
     }
 
-    private fun updateState(newState: LoginState) {
-        _state = newState
-        notifyListeners()
-    }
-
-    private fun notifyListeners() {
-        val currentState = _state
-        listeners.forEach { it(currentState) }
-    }
-
     private fun handleEmailChanged(email: String) {
         val emailError = if (email.isNotEmpty() && !isValidEmail(email)) {
             "Format email tidak valid (contoh: user@kmptemplate.org)"
         } else {
             null
         }
-        updateState(
-            _state.copy(
-                email = email,
-                emailError = emailError,
-                generalError = null
-            )
-        )
+        _state.update {
+            it.copy(email = email, emailError = emailError, generalError = null)
+        }
     }
 
     private fun handlePasswordChanged(password: String) {
@@ -83,22 +70,18 @@ class LoginStore(
         } else {
             null
         }
-        updateState(
-            _state.copy(
-                password = password,
-                passwordError = passwordError,
-                generalError = null
-            )
-        )
+        _state.update {
+            it.copy(password = password, passwordError = passwordError, generalError = null)
+        }
     }
 
     private fun handleTogglePasswordVisibility() {
-        updateState(_state.copy(isPasswordVisible = !_state.isPasswordVisible))
+        _state.update { it.copy(isPasswordVisible = !it.isPasswordVisible) }
     }
 
     private fun handleSubmitLogin() {
-        val email = _state.email.trim()
-        val password = _state.password.trim()
+        val email = _state.value.email.trim()
+        val password = _state.value.password.trim()
 
         var hasError = false
         var emailErr: String? = null
@@ -121,69 +104,53 @@ class LoginStore(
         }
 
         if (hasError) {
-            updateState(
-                _state.copy(
+            _state.update {
+                it.copy(
                     emailError = emailErr,
                     passwordError = passwordErr,
                     generalError = "Mohon lengkapi formulir dengan benar"
                 )
-            )
+            }
             return
         }
 
-        updateState(_state.copy(isLoading = true, generalError = null))
+        _state.update { it.copy(isLoading = true, generalError = null) }
 
         val result = repository.login(email, password)
         result.fold(
             onSuccess = { user ->
-                updateState(
-                    _state.copy(
+                _state.update {
+                    it.copy(
                         isLoading = false,
                         isSuccess = true,
                         loggedInUser = user,
                         generalError = null
                     )
-                )
+                }
             },
             onFailure = { error ->
-                updateState(
-                    _state.copy(
+                _state.update {
+                    it.copy(
                         isLoading = false,
                         isSuccess = false,
                         generalError = error.message ?: "Gagal masuk. Silakan coba lagi."
                     )
-                )
+                }
             }
         )
     }
 
     private fun handleClearErrors() {
-        updateState(
-            _state.copy(
-                emailError = null,
-                passwordError = null,
-                generalError = null
-            )
-        )
+        _state.update {
+            it.copy(emailError = null, passwordError = null, generalError = null)
+        }
     }
 
     private fun handleReset() {
-        updateState(LoginState())
+        _state.value = LoginState()
     }
 
     private fun isValidEmail(email: String): Boolean {
         return email.contains("@") && email.substringAfter("@").contains(".")
-    }
-
-    /**
-     * Subscribe to state updates. Returns an unsubscribe function.
-     * Invokes listener immediately with the current state.
-     */
-    fun subscribe(listener: (LoginState) -> Unit): () -> Unit {
-        listeners.add(listener)
-        listener(_state)
-        return {
-            listeners.remove(listener)
-        }
     }
 }

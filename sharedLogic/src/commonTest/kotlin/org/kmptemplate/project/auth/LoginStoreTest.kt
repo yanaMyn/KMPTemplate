@@ -45,7 +45,7 @@ class LoginStoreTest {
     @Test
     fun testInitialState() {
         val store = createStore()
-        val state = store.state
+        val state = store.state.value
 
         assertEquals("", state.email)
         assertEquals("", state.password)
@@ -65,14 +65,14 @@ class LoginStoreTest {
 
         // Invalid email format
         store.dispatch(LoginIntent.EmailChanged("invalid-email"))
-        assertEquals("invalid-email", store.state.email)
-        assertNotNull(store.state.emailError)
-        assertFalse(store.state.canSubmit)
+        assertEquals("invalid-email", store.state.value.email)
+        assertNotNull(store.state.value.emailError)
+        assertFalse(store.state.value.canSubmit)
 
         // Valid email format
         store.dispatch(LoginIntent.EmailChanged("valid@kmptemplate.org"))
-        assertEquals("valid@kmptemplate.org", store.state.email)
-        assertNull(store.state.emailError)
+        assertEquals("valid@kmptemplate.org", store.state.value.email)
+        assertNull(store.state.value.emailError)
     }
 
     @Test
@@ -81,26 +81,26 @@ class LoginStoreTest {
 
         // Password too short
         store.dispatch(LoginIntent.PasswordChanged("123"))
-        assertEquals("123", store.state.password)
-        assertNotNull(store.state.passwordError)
-        assertFalse(store.state.canSubmit)
+        assertEquals("123", store.state.value.password)
+        assertNotNull(store.state.value.passwordError)
+        assertFalse(store.state.value.canSubmit)
 
         // Valid password length
         store.dispatch(LoginIntent.PasswordChanged("Secret123"))
-        assertEquals("Secret123", store.state.password)
-        assertNull(store.state.passwordError)
+        assertEquals("Secret123", store.state.value.password)
+        assertNull(store.state.value.passwordError)
     }
 
     @Test
     fun testTogglePasswordVisibility() {
         val store = createStore()
-        assertFalse(store.state.isPasswordVisible)
+        assertFalse(store.state.value.isPasswordVisible)
 
         store.dispatch(LoginIntent.TogglePasswordVisibility)
-        assertTrue(store.state.isPasswordVisible)
+        assertTrue(store.state.value.isPasswordVisible)
 
         store.dispatch(LoginIntent.TogglePasswordVisibility)
-        assertFalse(store.state.isPasswordVisible)
+        assertFalse(store.state.value.isPasswordVisible)
     }
 
     @Test
@@ -108,7 +108,7 @@ class LoginStoreTest {
         val store = createStore()
         store.dispatch(LoginIntent.SubmitLogin)
 
-        val state = store.state
+        val state = store.state.value
         assertFalse(state.isSuccess)
         assertNotNull(state.emailError)
         assertNotNull(state.passwordError)
@@ -120,11 +120,11 @@ class LoginStoreTest {
         val store = createStore()
         store.dispatch(LoginIntent.EmailChanged("valid@kmptemplate.org"))
         store.dispatch(LoginIntent.PasswordChanged("Secret123"))
-        assertTrue(store.state.canSubmit)
+        assertTrue(store.state.value.canSubmit)
 
         store.dispatch(LoginIntent.SubmitLogin)
 
-        val state = store.state
+        val state = store.state.value
         assertFalse(state.isLoading)
         assertTrue(state.isSuccess)
         assertNull(state.generalError)
@@ -139,11 +139,11 @@ class LoginStoreTest {
         val store = createStore()
         store.dispatch(LoginIntent.EmailChanged("wrong@kmptemplate.org"))
         store.dispatch(LoginIntent.PasswordChanged("WrongPass123"))
-        assertTrue(store.state.canSubmit)
+        assertTrue(store.state.value.canSubmit)
 
         store.dispatch(LoginIntent.SubmitLogin)
 
-        val state = store.state
+        val state = store.state.value
         assertFalse(state.isLoading)
         assertFalse(state.isSuccess)
         assertNull(state.loggedInUser)
@@ -154,32 +154,34 @@ class LoginStoreTest {
     fun testClearErrorsAndReset() {
         val store = createStore()
         store.dispatch(LoginIntent.SubmitLogin)
-        assertNotNull(store.state.generalError)
+        assertNotNull(store.state.value.generalError)
 
         store.dispatch(LoginIntent.ClearErrors)
-        assertNull(store.state.emailError)
-        assertNull(store.state.passwordError)
-        assertNull(store.state.generalError)
+        assertNull(store.state.value.emailError)
+        assertNull(store.state.value.passwordError)
+        assertNull(store.state.value.generalError)
 
         store.dispatch(LoginIntent.EmailChanged("test@kmptemplate.org"))
         store.dispatch(LoginIntent.Reset)
-        assertEquals("", store.state.email)
-        assertFalse(store.state.isSuccess)
+        assertEquals("", store.state.value.email)
+        assertFalse(store.state.value.isSuccess)
     }
 
     @Test
-    fun testSubscriptionUpdates() {
+    fun testStateFlowReflectsUpdates() {
         val store = createStore()
-        val states = mutableListOf<LoginState>()
-        val unsubscribe = store.subscribe { states.add(it) }
+        val flow = store.state
+
+        assertEquals("", flow.value.email)
 
         store.dispatch(LoginIntent.EmailChanged("test@kmptemplate.org"))
-        store.dispatch(LoginIntent.PasswordChanged("Secret123"))
-        unsubscribe()
-        store.dispatch(LoginIntent.Reset)
+        assertEquals("test@kmptemplate.org", flow.value.email)
 
-        // initial state (1) + email changed (2) + password changed (3) = 3 updates received before unsubscribe
-        assertEquals(3, states.size)
-        assertEquals("Secret123", states.last().password)
+        store.dispatch(LoginIntent.PasswordChanged("Secret123"))
+        assertEquals("Secret123", flow.value.password)
+
+        store.dispatch(LoginIntent.Reset)
+        assertEquals("", flow.value.email)
+        assertEquals("", flow.value.password)
     }
 }

@@ -1,5 +1,9 @@
 package org.kmptemplate.project.walkthrough.mvi
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.kmptemplate.project.walkthrough.data.WalkthroughRepository
 import org.kmptemplate.project.walkthrough.data.WalkthroughRepositoryImpl
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
@@ -35,11 +39,8 @@ sealed class WalkthroughIntent {
 class WalkthroughStore(
     private val repository: WalkthroughRepository = WalkthroughRepositoryImpl()
 ) {
-    private var _state: WalkthroughState = WalkthroughState(isLoading = true)
-    val state: WalkthroughState
-        get() = _state
-
-    private val listeners = mutableListOf<(WalkthroughState) -> Unit>()
+    private val _state = MutableStateFlow(WalkthroughState(isLoading = true))
+    val state: StateFlow<WalkthroughState> = _state.asStateFlow()
 
     init {
         dispatch(WalkthroughIntent.LoadItems)
@@ -56,68 +57,43 @@ class WalkthroughStore(
         }
     }
 
-    private fun updateState(newState: WalkthroughState) {
-        _state = newState
-        notifyListeners()
-    }
-
-    private fun notifyListeners() {
-        val currentState = _state
-        listeners.forEach { it(currentState) }
-    }
-
     private fun handleLoadItems() {
         val items = repository.fetchWalkthroughItems()
-        updateState(
-            WalkthroughState(
-                items = items,
-                currentIndex = 0,
-                isLoading = false,
-                isCompleted = false
-            )
+        _state.value = WalkthroughState(
+            items = items,
+            currentIndex = 0,
+            isLoading = false,
+            isCompleted = false
         )
     }
 
     private fun handleNextPage() {
-        val current = _state
-        if (current.isLastPage) {
-            updateState(current.copy(isCompleted = true))
-        } else {
-            val nextIndex = (current.currentIndex + 1).coerceAtMost(current.items.lastIndex)
-            updateState(current.copy(currentIndex = nextIndex))
+        _state.update {
+            if (it.isLastPage) {
+                it.copy(isCompleted = true)
+            } else {
+                it.copy(currentIndex = (it.currentIndex + 1).coerceAtMost(it.items.lastIndex))
+            }
         }
     }
 
     private fun handlePreviousPage() {
-        val current = _state
-        val prevIndex = (current.currentIndex - 1).coerceAtLeast(0)
-        updateState(current.copy(currentIndex = prevIndex))
+        _state.update {
+            it.copy(currentIndex = (it.currentIndex - 1).coerceAtLeast(0))
+        }
     }
 
     private fun handleSelectPage(index: Int) {
-        val current = _state
-        if (index in current.items.indices) {
-            updateState(current.copy(currentIndex = index))
+        _state.update {
+            if (index in it.items.indices) it.copy(currentIndex = index) else it
         }
     }
 
     private fun handleSkip() {
-        updateState(_state.copy(isCompleted = true))
+        _state.update { it.copy(isCompleted = true) }
     }
 
     private fun handleComplete() {
-        updateState(_state.copy(isCompleted = true))
-    }
-
-    /**
-     * Subscribe to state updates. Returns an unsubscribe function.
-     * Invokes listener immediately with the current state.
-     */
-    fun subscribe(listener: (WalkthroughState) -> Unit): () -> Unit {
-        listeners.add(listener)
-        listener(_state)
-        return {
-            listeners.remove(listener)
-        }
+        _state.update { it.copy(isCompleted = true) }
     }
 }

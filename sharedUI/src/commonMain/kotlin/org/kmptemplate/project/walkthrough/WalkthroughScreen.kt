@@ -26,16 +26,7 @@ fun WalkthroughScreen(
     store: WalkthroughStore = remember { WalkthroughStore() },
     onFinished: () -> Unit = {}
 ) {
-    var state by remember { mutableStateOf(store.state) }
-
-    DisposableEffect(store) {
-        val unsubscribe = store.subscribe { newState ->
-            state = newState
-        }
-        onDispose {
-            unsubscribe()
-        }
-    }
+    val state by store.state.collectAsState()
 
     if (state.isCompleted) {
         WalkthroughCompletedView(

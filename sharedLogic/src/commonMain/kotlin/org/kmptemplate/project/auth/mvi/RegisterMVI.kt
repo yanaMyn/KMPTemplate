@@ -1,9 +1,15 @@
 package org.kmptemplate.project.auth.mvi
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.kmptemplate.project.auth.data.AuthRepository
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
@@ -52,11 +58,16 @@ sealed class RegisterIntent {
     data object Reset : RegisterIntent()
 }
 
+fun createRegisterStore(): RegisterStore = RegisterStore()
+
 class RegisterStore(
-    private val repository: AuthRepository = AuthRepositoryImpl()
+    private val repository: AuthRepository = AuthRepositoryImpl(),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     private val _state = MutableStateFlow(RegisterState())
     val state: StateFlow<RegisterState> = _state.asStateFlow()
+
+    private var submitJob: Job? = null
 
     fun dispatch(intent: RegisterIntent) {
         when (intent) {
@@ -71,6 +82,10 @@ class RegisterStore(
             is RegisterIntent.ClearErrors -> handleClearErrors()
             is RegisterIntent.Reset -> handleReset()
         }
+    }
+
+    fun close() {
+        scope.cancel()
     }
 
     private fun handleNameChanged(name: String) {
@@ -207,30 +222,31 @@ class RegisterStore(
             return
         }
 
-        _state.update { it.copy(isLoading = true, generalError = null) }
-
-        val result = repository.register(name, email, password)
-        result.fold(
-            onSuccess = { user ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        registeredUser = user,
-                        generalError = null
-                    )
+        submitJob?.cancel()
+        submitJob = scope.launch {
+            _state.update { it.copy(isLoading = true, generalError = null) }
+            repository.register(name, email, password).fold(
+                onSuccess = { user ->
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            registeredUser = user,
+                            generalError = null
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = false,
+                            generalError = error.message ?: "Gagal mendaftar. Silakan coba lagi."
+                        )
+                    }
                 }
-            },
-            onFailure = { error ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        generalError = error.message ?: "Gagal mendaftar. Silakan coba lagi."
-                    )
-                }
-            }
-        )
+            )
+        }
     }
 
     private fun handleClearErrors() {
@@ -247,6 +263,7 @@ class RegisterStore(
     }
 
     private fun handleReset() {
+        submitJob?.cancel()
         _state.value = RegisterState()
     }
 

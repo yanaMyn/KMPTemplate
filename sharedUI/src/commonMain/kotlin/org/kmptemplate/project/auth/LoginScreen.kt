@@ -38,6 +38,10 @@ fun LoginScreen(
 ) {
     val state by store.state.collectAsState()
 
+    DisposableEffect(store) {
+        onDispose { store.close() }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -278,23 +282,23 @@ private fun LoginFormView(
                 ) {
                     FilledTonalButton(
                         onClick = {
-                            onIntent(LoginIntent.EmailChanged("admin@kmptemplate.org"))
+                            onIntent(LoginIntent.EmailChanged("Sincere@april.biz"))
                             onIntent(LoginIntent.PasswordChanged("Password123!"))
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("Admin Demo", fontSize = 12.sp)
+                        Text("Leanne Graham", fontSize = 12.sp)
                     }
                     FilledTonalButton(
                         onClick = {
-                            onIntent(LoginIntent.EmailChanged("user@kmptemplate.org"))
+                            onIntent(LoginIntent.EmailChanged("Shanna@melissa.tv"))
                             onIntent(LoginIntent.PasswordChanged("Password123!"))
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(10.dp)
                     ) {
-                        Text("User Demo", fontSize = 12.sp)
+                        Text("Ervin Howell", fontSize = 12.sp)
                     }
                 }
             }

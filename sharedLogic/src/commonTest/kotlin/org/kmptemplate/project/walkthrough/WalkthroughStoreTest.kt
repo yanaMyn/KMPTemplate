@@ -1,20 +1,24 @@
 package org.kmptemplate.project.walkthrough
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.kmptemplate.project.walkthrough.data.WalkthroughDataSource
 import org.kmptemplate.project.walkthrough.data.WalkthroughRepositoryImpl
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
 import org.kmptemplate.project.walkthrough.mvi.WalkthroughIntent
-import org.kmptemplate.project.walkthrough.mvi.WalkthroughState
 import org.kmptemplate.project.walkthrough.mvi.WalkthroughStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class WalkthroughStoreTest {
 
     private class FakeDataSource : WalkthroughDataSource {
-        override fun getWalkthroughItems(): List<WalkthroughItem> {
+        override suspend fun getWalkthroughItems(): List<WalkthroughItem> {
             return listOf(
                 WalkthroughItem(1, "Page 1", "Desc 1", "icon1"),
                 WalkthroughItem(2, "Page 2", "Desc 2", "icon2"),
@@ -25,7 +29,8 @@ class WalkthroughStoreTest {
 
     private fun createStore(): WalkthroughStore {
         val repo = WalkthroughRepositoryImpl(FakeDataSource())
-        return WalkthroughStore(repository = repo)
+        val scope = CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher())
+        return WalkthroughStore(repository = repo, scope = scope)
     }
 
     @Test

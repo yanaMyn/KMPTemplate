@@ -1,10 +1,14 @@
 package org.kmptemplate.project.auth
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.kmptemplate.project.auth.data.AuthDataSource
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.auth.mvi.LoginIntent
-import org.kmptemplate.project.auth.mvi.LoginState
 import org.kmptemplate.project.auth.mvi.LoginStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,10 +17,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class LoginStoreTest {
 
     private class FakeAuthDataSource : AuthDataSource {
-        override fun authenticate(email: String, password: String): Result<User> {
+        override suspend fun authenticate(email: String, password: String): Result<User> {
             if (email == "valid@kmptemplate.org" && password == "Secret123") {
                 return Result.success(
                     User(
@@ -30,7 +35,7 @@ class LoginStoreTest {
             return Result.failure(IllegalArgumentException("Kredensial tidak valid"))
         }
 
-        override fun register(name: String, email: String, password: String): Result<User> {
+        override suspend fun register(name: String, email: String, password: String): Result<User> {
             return Result.failure(
                 IllegalStateException("Registrasi tidak digunakan pada LoginStoreTest")
             )
@@ -39,7 +44,8 @@ class LoginStoreTest {
 
     private fun createStore(): LoginStore {
         val repo = AuthRepositoryImpl(FakeAuthDataSource())
-        return LoginStore(repository = repo)
+        val scope = CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher())
+        return LoginStore(repository = repo, scope = scope)
     }
 
     @Test
@@ -63,13 +69,11 @@ class LoginStoreTest {
     fun testEmailValidation() {
         val store = createStore()
 
-        // Invalid email format
         store.dispatch(LoginIntent.EmailChanged("invalid-email"))
         assertEquals("invalid-email", store.state.value.email)
         assertNotNull(store.state.value.emailError)
         assertFalse(store.state.value.canSubmit)
 
-        // Valid email format
         store.dispatch(LoginIntent.EmailChanged("valid@kmptemplate.org"))
         assertEquals("valid@kmptemplate.org", store.state.value.email)
         assertNull(store.state.value.emailError)
@@ -79,13 +83,11 @@ class LoginStoreTest {
     fun testPasswordValidation() {
         val store = createStore()
 
-        // Password too short
         store.dispatch(LoginIntent.PasswordChanged("123"))
         assertEquals("123", store.state.value.password)
         assertNotNull(store.state.value.passwordError)
         assertFalse(store.state.value.canSubmit)
 
-        // Valid password length
         store.dispatch(LoginIntent.PasswordChanged("Secret123"))
         assertEquals("Secret123", store.state.value.password)
         assertNull(store.state.value.passwordError)
@@ -116,7 +118,7 @@ class LoginStoreTest {
     }
 
     @Test
-    fun testLoginSuccess() {
+    fun testLoginSuccess() = runTest {
         val store = createStore()
         store.dispatch(LoginIntent.EmailChanged("valid@kmptemplate.org"))
         store.dispatch(LoginIntent.PasswordChanged("Secret123"))
@@ -135,7 +137,7 @@ class LoginStoreTest {
     }
 
     @Test
-    fun testLoginFailureWithInvalidCredentials() {
+    fun testLoginFailureWithInvalidCredentials() = runTest {
         val store = createStore()
         store.dispatch(LoginIntent.EmailChanged("wrong@kmptemplate.org"))
         store.dispatch(LoginIntent.PasswordChanged("WrongPass123"))

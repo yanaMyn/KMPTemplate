@@ -1,10 +1,14 @@
 package org.kmptemplate.project.auth
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
 import org.kmptemplate.project.auth.data.AuthDataSource
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.auth.mvi.RegisterIntent
-import org.kmptemplate.project.auth.mvi.RegisterState
 import org.kmptemplate.project.auth.mvi.RegisterStore
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,16 +17,17 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class RegisterStoreTest {
 
     private class FakeAuthDataSource : AuthDataSource {
-        override fun authenticate(email: String, password: String): Result<User> {
+        override suspend fun authenticate(email: String, password: String): Result<User> {
             return Result.failure(
                 IllegalStateException("Autentikasi tidak digunakan pada RegisterStoreTest")
             )
         }
 
-        override fun register(name: String, email: String, password: String): Result<User> {
+        override suspend fun register(name: String, email: String, password: String): Result<User> {
             if (email == TAKEN_EMAIL) {
                 return Result.failure(
                     IllegalArgumentException("Email sudah terdaftar. Silakan gunakan email lain.")
@@ -41,10 +46,10 @@ class RegisterStoreTest {
 
     private fun createStore(): RegisterStore {
         val repo = AuthRepositoryImpl(FakeAuthDataSource())
-        return RegisterStore(repository = repo)
+        val scope = CoroutineScope(SupervisorJob() + UnconfinedTestDispatcher())
+        return RegisterStore(repository = repo, scope = scope)
     }
 
-    /** Mengisi seluruh field dengan data valid dan menyetujui syarat & ketentuan. */
     private fun RegisterStore.fillValidForm(email: String = "baru@kmptemplate.org") {
         dispatch(RegisterIntent.NameChanged("Budi Santoso"))
         dispatch(RegisterIntent.EmailChanged(email))
@@ -136,7 +141,6 @@ class RegisterStoreTest {
     fun testConfirmPasswordRevalidatedWhenPasswordChanges() {
         val store = createStore()
 
-        // Konfirmasi diisi lebih dulu, lalu password diubah sampai cocok.
         store.dispatch(RegisterIntent.PasswordChanged("Secret123"))
         store.dispatch(RegisterIntent.ConfirmPasswordChanged("Secret1234"))
         assertNotNull(store.state.value.confirmPasswordError)
@@ -212,7 +216,7 @@ class RegisterStoreTest {
     }
 
     @Test
-    fun testRegisterSuccessAutoLogin() {
+    fun testRegisterSuccessAutoLogin() = runTest {
         val store = createStore()
         store.fillValidForm()
         assertTrue(store.state.value.canSubmit)
@@ -231,7 +235,7 @@ class RegisterStoreTest {
     }
 
     @Test
-    fun testRegisterFailureDuplicateEmail() {
+    fun testRegisterFailureDuplicateEmail() = runTest {
         val store = createStore()
         store.fillValidForm(email = TAKEN_EMAIL)
         assertTrue(store.state.value.canSubmit)

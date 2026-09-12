@@ -9,7 +9,7 @@ final class WalkthroughViewModel: ObservableObject {
     private let store: WalkthroughStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: WalkthroughStore = WalkthroughStore(repository: WalkthroughRepositoryImpl(dataSource: DefaultWalkthroughDataSource()))) {
+    init(store: WalkthroughStore = WalkthroughMVIKt.createWalkthroughStore()) {
         self.store = store
         self.state = store.state.value
 
@@ -23,6 +23,7 @@ final class WalkthroughViewModel: ObservableObject {
 
     deinit {
         stateTask?.cancel()
+        store.close()
     }
 
     func onNext() {

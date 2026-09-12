@@ -9,7 +9,7 @@ final class RegisterViewModel: ObservableObject {
     private let store: RegisterStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: RegisterStore = RegisterStore(repository: AuthRepositoryImpl(dataSource: DefaultAuthDataSource()))) {
+    init(store: RegisterStore = RegisterMVIKt.createRegisterStore()) {
         self.store = store
         self.state = store.state.value
 
@@ -23,6 +23,7 @@ final class RegisterViewModel: ObservableObject {
 
     deinit {
         stateTask?.cancel()
+        store.close()
     }
 
     func onNameChange(_ name: String) {

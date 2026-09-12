@@ -1,82 +1,105 @@
 package org.kmptemplate.project.auth.data
 
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
+import io.ktor.http.isSuccess
+import kotlinx.serialization.Serializable
+import org.kmptemplate.project.auth.data.dto.UserDto
 import org.kmptemplate.project.auth.model.User
+import org.kmptemplate.project.network.ApiConfig
+import org.kmptemplate.project.network.createHttpClient
 
 interface AuthDataSource {
-    fun authenticate(email: String, password: String): Result<User>
-    fun register(name: String, email: String, password: String): Result<User>
+    suspend fun authenticate(email: String, password: String): Result<User>
+    suspend fun register(name: String, email: String, password: String): Result<User>
 }
 
-class DefaultAuthDataSource : AuthDataSource {
-    /**
-     * In-memory storage untuk akun hasil registrasi (User + password).
-     * Hanya untuk keperluan template/demo — bukan penyimpanan persisten.
-     */
-    private val registeredUsers = mutableListOf<Pair<User, String>>()
+/**
+ * Data source untuk auth yang meng-hit https://jsonplaceholder.typicode.com.
+ *
+ * Placeholder API tidak menyediakan endpoint autentikasi, jadi:
+ *  - `authenticate` = `GET /users?email=<email>`; kata sandi dicek client-side terhadap
+ *    kata sandi demo tetap `Password123!`.
+ *  - `register` = `POST /users` (server placeholder membalas id 11).
+ */
+class RemoteAuthDataSource(
+    private val client: HttpClient = createHttpClient()
+) : AuthDataSource {
 
-    override fun authenticate(email: String, password: String): Result<User> {
+    override suspend fun authenticate(email: String, password: String): Result<User> {
         val trimmedEmail = email.trim()
         val trimmedPassword = password.trim()
 
-        if (trimmedEmail.equals("admin@kmptemplate.org", ignoreCase = true) && trimmedPassword == "Password123!") {
-            return Result.success(
-                User(
-                    id = "usr_001",
-                    name = "Admin User",
-                    email = trimmedEmail,
-                    token = "mock_jwt_token_admin_kmptemplate"
+        if (trimmedPassword != DEMO_PASSWORD) {
+            return Result.failure(
+                IllegalArgumentException(
+                    "Email atau kata sandi tidak valid. Untuk demo, gunakan kata sandi \"$DEMO_PASSWORD\"."
                 )
             )
         }
 
-        if (trimmedEmail.equals("user@kmptemplate.org", ignoreCase = true) && trimmedPassword == "Password123!") {
-            return Result.success(
-                User(
-                    id = "usr_002",
-                    name = "Standard User",
-                    email = trimmedEmail,
-                    token = "mock_jwt_token_user_kmptemplate"
-                )
-            )
+        return runCatching {
+            val response: HttpResponse = client.get("${ApiConfig.BASE_URL}/users") {
+                parameter("email", trimmedEmail)
+            }
+            if (!response.status.isSuccess()) {
+                error("Login gagal (${response.status.value}).")
+            }
+            val users: List<UserDto> = response.body()
+            val match = users.firstOrNull { it.email.equals(trimmedEmail, ignoreCase = true) }
+                ?: error("Email tidak terdaftar. Coba email dari jsonplaceholder (mis. Sincere@april.biz).")
+            match.toUser()
         }
-
-        val registered = registeredUsers.firstOrNull { (user, storedPassword) ->
-            user.email.equals(trimmedEmail, ignoreCase = true) && storedPassword == trimmedPassword
-        }
-        if (registered != null) {
-            return Result.success(registered.first)
-        }
-
-        return Result.failure(IllegalArgumentException("Email atau kata sandi tidak valid."))
     }
 
-    override fun register(name: String, email: String, password: String): Result<User> {
+    override suspend fun register(name: String, email: String, password: String): Result<User> {
         val trimmedName = name.trim()
         val trimmedEmail = email.trim()
-        val trimmedPassword = password.trim()
 
-        if (isEmailTaken(trimmedEmail)) {
-            return Result.failure(
-                IllegalArgumentException("Email sudah terdaftar. Silakan gunakan email lain.")
-            )
+        return runCatching {
+            val response: HttpResponse = client.post("${ApiConfig.BASE_URL}/users") {
+                contentType(ContentType.Application.Json)
+                setBody(
+                    RegisterRequest(
+                        name = trimmedName,
+                        username = trimmedName.substringBefore(' ').lowercase(),
+                        email = trimmedEmail
+                    )
+                )
+            }
+            if (response.status != HttpStatusCode.Created && !response.status.isSuccess()) {
+                error("Registrasi gagal (${response.status.value}).")
+            }
+            response.body<UserDto>().toUser(fallbackName = trimmedName, fallbackEmail = trimmedEmail)
         }
-
-        val userId = "usr_reg_" + (registeredUsers.size + 1)
-        val user = User(
-            id = userId,
-            name = trimmedName,
-            email = trimmedEmail,
-            token = "mock_jwt_token_" + userId
-        )
-        registeredUsers.add(user to trimmedPassword)
-        return Result.success(user)
     }
 
-    private fun isEmailTaken(email: String): Boolean {
-        val demoEmails = listOf("admin@kmptemplate.org", "user@kmptemplate.org")
-        if (demoEmails.any { it.equals(email, ignoreCase = true) }) {
-            return true
-        }
-        return registeredUsers.any { (user, _) -> user.email.equals(email, ignoreCase = true) }
+    @Serializable
+    private data class RegisterRequest(
+        val name: String,
+        val username: String,
+        val email: String
+    )
+
+    private fun UserDto.toUser(
+        fallbackName: String = name,
+        fallbackEmail: String = email
+    ): User = User(
+        id = "usr_$id",
+        name = name.ifBlank { fallbackName },
+        email = email.ifBlank { fallbackEmail },
+        token = "jsonplaceholder_token_$id"
+    )
+
+    private companion object {
+        const val DEMO_PASSWORD = "Password123!"
     }
 }

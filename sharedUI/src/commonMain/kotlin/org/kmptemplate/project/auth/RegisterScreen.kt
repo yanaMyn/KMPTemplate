@@ -38,6 +38,10 @@ fun RegisterScreen(
 ) {
     val state by store.state.collectAsState()
 
+    DisposableEffect(store) {
+        onDispose { store.close() }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background

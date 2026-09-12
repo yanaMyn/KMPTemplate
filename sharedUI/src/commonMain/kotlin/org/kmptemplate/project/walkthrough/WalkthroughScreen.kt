@@ -28,6 +28,10 @@ fun WalkthroughScreen(
 ) {
     val state by store.state.collectAsState()
 
+    DisposableEffect(store) {
+        onDispose { store.close() }
+    }
+
     if (state.isCompleted) {
         WalkthroughCompletedView(
             onRestart = { store.dispatch(WalkthroughIntent.LoadItems) },

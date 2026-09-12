@@ -1,32 +1,43 @@
 package org.kmptemplate.project.walkthrough.data
 
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import org.kmptemplate.project.network.ApiConfig
+import org.kmptemplate.project.network.createHttpClient
+import org.kmptemplate.project.walkthrough.data.dto.PostDto
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
 
 interface WalkthroughDataSource {
-    fun getWalkthroughItems(): List<WalkthroughItem>
+    suspend fun getWalkthroughItems(): List<WalkthroughItem>
 }
 
-class DefaultWalkthroughDataSource : WalkthroughDataSource {
-    override fun getWalkthroughItems(): List<WalkthroughItem> {
-        return listOf(
+/**
+ * Mengambil 3 post pertama dari https://jsonplaceholder.typicode.com/posts
+ * dan memetakannya menjadi WalkthroughItem.
+ */
+class RemoteWalkthroughDataSource(
+    private val client: HttpClient = createHttpClient()
+) : WalkthroughDataSource {
+
+    override suspend fun getWalkthroughItems(): List<WalkthroughItem> {
+        val posts: List<PostDto> = client.get("${ApiConfig.BASE_URL}/posts") {
+            parameter("_limit", MAX_ITEMS)
+        }.body()
+
+        return posts.take(MAX_ITEMS).mapIndexed { index, post ->
             WalkthroughItem(
-                id = 1,
-                title = "Selamat Datang di KMP Template",
-                description = "Jelajahi kehebatan Kotlin Multiplatform dengan logika bersama dan performa native di Android & iOS.",
-                iconName = "sparkles"
-            ),
-            WalkthroughItem(
-                id = 2,
-                title = "Arsitektur MVI yang Teruji",
-                description = "Kelola state aplikasi secara terpusat, terprediksi, dan mudah diuji dengan Model-View-Intent.",
-                iconName = "layers"
-            ),
-            WalkthroughItem(
-                id = 3,
-                title = "Native UI Terbaik",
-                description = "Nikmati antarmuka Jetpack Compose di Android dan SwiftUI di iOS untuk pengalaman pengguna optimal.",
-                iconName = "devices"
+                id = post.id,
+                title = post.title.replaceFirstChar { it.uppercase() },
+                description = post.body.replace('\n', ' '),
+                iconName = ICONS[index % ICONS.size]
             )
-        )
+        }
+    }
+
+    private companion object {
+        const val MAX_ITEMS = 3
+        val ICONS = listOf("sparkles", "layers", "devices")
     }
 }

@@ -1,9 +1,15 @@
 package org.kmptemplate.project.auth.mvi
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.kmptemplate.project.auth.data.AuthRepository
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
@@ -36,11 +42,18 @@ sealed class LoginIntent {
     data object Reset : LoginIntent()
 }
 
+/** Factory untuk konsumen native (Swift) — menghindari batasan Kotlin/Native yang tidak
+ * mengekspor konstruktor tanpa argumen ketika seluruh parameter memiliki default value. */
+fun createLoginStore(): LoginStore = LoginStore()
+
 class LoginStore(
-    private val repository: AuthRepository = AuthRepositoryImpl()
+    private val repository: AuthRepository = AuthRepositoryImpl(),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     private val _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state.asStateFlow()
+
+    private var submitJob: Job? = null
 
     fun dispatch(intent: LoginIntent) {
         when (intent) {
@@ -51,6 +64,11 @@ class LoginStore(
             is LoginIntent.ClearErrors -> handleClearErrors()
             is LoginIntent.Reset -> handleReset()
         }
+    }
+
+    /** Batalkan pekerjaan latar & bebaskan resources. Wajib dipanggil dari `onDispose` / `deinit`. */
+    fun close() {
+        scope.cancel()
     }
 
     private fun handleEmailChanged(email: String) {
@@ -114,30 +132,31 @@ class LoginStore(
             return
         }
 
-        _state.update { it.copy(isLoading = true, generalError = null) }
-
-        val result = repository.login(email, password)
-        result.fold(
-            onSuccess = { user ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        loggedInUser = user,
-                        generalError = null
-                    )
+        submitJob?.cancel()
+        submitJob = scope.launch {
+            _state.update { it.copy(isLoading = true, generalError = null) }
+            repository.login(email, password).fold(
+                onSuccess = { user ->
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = true,
+                            loggedInUser = user,
+                            generalError = null
+                        )
+                    }
+                },
+                onFailure = { error ->
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            isSuccess = false,
+                            generalError = error.message ?: "Gagal masuk. Silakan coba lagi."
+                        )
+                    }
                 }
-            },
-            onFailure = { error ->
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        generalError = error.message ?: "Gagal masuk. Silakan coba lagi."
-                    )
-                }
-            }
-        )
+            )
+        }
     }
 
     private fun handleClearErrors() {
@@ -147,6 +166,7 @@ class LoginStore(
     }
 
     private fun handleReset() {
+        submitJob?.cancel()
         _state.value = LoginState()
     }
 

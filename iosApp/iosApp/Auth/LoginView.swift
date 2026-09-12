@@ -294,10 +294,10 @@ private struct LoginFormSwiftUIView: View {
                     HStack(spacing: 12) {
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            viewModel.onEmailChange("admin@kmptemplate.org")
+                            viewModel.onEmailChange("Sincere@april.biz")
                             viewModel.onPasswordChange("Password123!")
                         }) {
-                            Label("Admin Demo", systemImage: "person.badge.shield.checkmark.fill")
+                            Label("Leanne Graham", systemImage: "person.badge.shield.checkmark.fill")
                                 .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
@@ -309,10 +309,10 @@ private struct LoginFormSwiftUIView: View {
                         
                         Button(action: {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            viewModel.onEmailChange("user@kmptemplate.org")
+                            viewModel.onEmailChange("Shanna@melissa.tv")
                             viewModel.onPasswordChange("Password123!")
                         }) {
-                            Label("User Demo", systemImage: "person.fill")
+                            Label("Ervin Howell", systemImage: "person.fill")
                                 .font(.caption.weight(.semibold))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)

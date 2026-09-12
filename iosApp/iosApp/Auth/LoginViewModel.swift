@@ -9,7 +9,7 @@ final class LoginViewModel: ObservableObject {
     private let store: LoginStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: LoginStore = LoginStore(repository: AuthRepositoryImpl(dataSource: DefaultAuthDataSource()))) {
+    init(store: LoginStore = LoginMVIKt.createLoginStore()) {
         self.store = store
         self.state = store.state.value
 
@@ -23,6 +23,7 @@ final class LoginViewModel: ObservableObject {
 
     deinit {
         stateTask?.cancel()
+        store.close()
     }
 
     func onEmailChange(_ email: String) {

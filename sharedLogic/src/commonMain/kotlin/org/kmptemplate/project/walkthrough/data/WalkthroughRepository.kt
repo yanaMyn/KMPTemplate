@@ -3,13 +3,13 @@ package org.kmptemplate.project.walkthrough.data
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
 
 interface WalkthroughRepository {
-    fun fetchWalkthroughItems(): List<WalkthroughItem>
+    suspend fun fetchWalkthroughItems(): List<WalkthroughItem>
 }
 
 class WalkthroughRepositoryImpl(
-    private val dataSource: WalkthroughDataSource = DefaultWalkthroughDataSource()
+    private val dataSource: WalkthroughDataSource = RemoteWalkthroughDataSource()
 ) : WalkthroughRepository {
-    override fun fetchWalkthroughItems(): List<WalkthroughItem> {
+    override suspend fun fetchWalkthroughItems(): List<WalkthroughItem> {
         return dataSource.getWalkthroughItems()
     }
 }

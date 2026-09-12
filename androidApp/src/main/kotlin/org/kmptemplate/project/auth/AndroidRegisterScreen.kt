@@ -4,6 +4,11 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import org.kmptemplate.project.auth.data.AuthDataSource
+import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.auth.mvi.RegisterIntent
 import org.kmptemplate.project.auth.mvi.RegisterStore
@@ -25,17 +30,39 @@ fun AndroidRegisterScreen(
     )
 }
 
+// region Preview scaffolding
+
+private class PreviewRegisterAuthDataSource(
+    private val shouldSucceed: Boolean = true
+) : AuthDataSource {
+    override suspend fun authenticate(email: String, password: String): Result<User> =
+        Result.failure(IllegalStateException("Autentikasi tidak digunakan di preview register."))
+
+    override suspend fun register(name: String, email: String, password: String): Result<User> =
+        if (shouldSucceed) Result.success(
+            User(id = "usr_preview", name = name, email = email, token = "preview_token")
+        ) else Result.failure(IllegalArgumentException("Email sudah terdaftar (preview)."))
+}
+
+private fun previewRegisterStore(shouldSucceed: Boolean = true): RegisterStore = RegisterStore(
+    repository = AuthRepositoryImpl(PreviewRegisterAuthDataSource(shouldSucceed)),
+    scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+)
+
+// endregion
+
 @Preview(name = "Register · Empty", showBackground = true, showSystemUi = true)
 @Composable
 private fun AndroidRegisterScreenEmptyPreview() {
-    AndroidRegisterScreen()
+    val store = remember { previewRegisterStore() }
+    RegisterScreen(store = store)
 }
 
 @Preview(name = "Register · Filled", showBackground = true, showSystemUi = true)
 @Composable
 private fun AndroidRegisterScreenFilledPreview() {
     val store = remember {
-        RegisterStore().apply {
+        previewRegisterStore().apply {
             dispatch(RegisterIntent.NameChanged("Budi Santoso"))
             dispatch(RegisterIntent.EmailChanged("budi@kmptemplate.org"))
             dispatch(RegisterIntent.PasswordChanged("Password123"))
@@ -50,7 +77,7 @@ private fun AndroidRegisterScreenFilledPreview() {
 @Composable
 private fun AndroidRegisterScreenErrorPreview() {
     val store = remember {
-        RegisterStore().apply {
+        previewRegisterStore().apply {
             dispatch(RegisterIntent.NameChanged("Ab"))
             dispatch(RegisterIntent.EmailChanged("bukan-email"))
             dispatch(RegisterIntent.PasswordChanged("123"))
@@ -65,7 +92,7 @@ private fun AndroidRegisterScreenErrorPreview() {
 @Composable
 private fun AndroidRegisterScreenSuccessPreview() {
     val store = remember {
-        RegisterStore().apply {
+        previewRegisterStore(shouldSucceed = true).apply {
             dispatch(RegisterIntent.NameChanged("Budi Santoso"))
             dispatch(RegisterIntent.EmailChanged("budi.baru@kmptemplate.org"))
             dispatch(RegisterIntent.PasswordChanged("Password123"))
@@ -85,5 +112,6 @@ private fun AndroidRegisterScreenSuccessPreview() {
 )
 @Composable
 private fun AndroidRegisterScreenDarkPreview() {
-    AndroidRegisterScreen()
+    val store = remember { previewRegisterStore() }
+    RegisterScreen(store = store)
 }

@@ -5,7 +5,6 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import org.kmptemplate.project.network.ApiConfig
-import org.kmptemplate.project.network.createHttpClient
 import org.kmptemplate.project.walkthrough.data.dto.PostDto
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
 
@@ -18,7 +17,7 @@ interface WalkthroughDataSource {
  * dan memetakannya menjadi WalkthroughItem.
  */
 class RemoteWalkthroughDataSource(
-    private val client: HttpClient = createHttpClient()
+    private val client: HttpClient
 ) : WalkthroughDataSource {
 
     override suspend fun getWalkthroughItems(): List<WalkthroughItem> {

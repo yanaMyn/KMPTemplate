@@ -15,7 +15,6 @@ import kotlinx.serialization.Serializable
 import org.kmptemplate.project.auth.data.dto.UserDto
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.network.ApiConfig
-import org.kmptemplate.project.network.createHttpClient
 
 interface AuthDataSource {
     suspend fun authenticate(email: String, password: String): Result<User>
@@ -31,7 +30,7 @@ interface AuthDataSource {
  *  - `register` = `POST /users` (server placeholder membalas id 11).
  */
 class RemoteAuthDataSource(
-    private val client: HttpClient = createHttpClient()
+    private val client: HttpClient
 ) : AuthDataSource {
 
     override suspend fun authenticate(email: String, password: String): Result<User> {

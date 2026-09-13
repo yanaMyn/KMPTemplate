@@ -7,7 +7,7 @@ interface WalkthroughRepository {
 }
 
 class WalkthroughRepositoryImpl(
-    private val dataSource: WalkthroughDataSource = RemoteWalkthroughDataSource()
+    private val dataSource: WalkthroughDataSource
 ) : WalkthroughRepository {
     override suspend fun fetchWalkthroughItems(): List<WalkthroughItem> {
         return dataSource.getWalkthroughItems()

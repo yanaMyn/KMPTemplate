@@ -37,6 +37,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
+            api(libs.koin.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.ktor.client.core)
             implementation(libs.ktor.client.contentNegotiation)
@@ -49,6 +50,11 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.okhttp)
+        }
+        getByName("androidHostTest").dependencies {
+            implementation(libs.konsist)
+            implementation(libs.junit)
+            implementation(libs.kotlin.testJunit)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

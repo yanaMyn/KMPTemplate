@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kmptemplate.project.walkthrough.data.WalkthroughRepository
-import org.kmptemplate.project.walkthrough.data.WalkthroughRepositoryImpl
 import org.kmptemplate.project.walkthrough.model.WalkthroughItem
 
 data class WalkthroughState(
@@ -43,10 +42,8 @@ sealed class WalkthroughIntent {
     data object Complete : WalkthroughIntent()
 }
 
-fun createWalkthroughStore(): WalkthroughStore = WalkthroughStore()
-
 class WalkthroughStore(
-    private val repository: WalkthroughRepository = WalkthroughRepositoryImpl(),
+    private val repository: WalkthroughRepository,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     private val _state = MutableStateFlow(WalkthroughState(isLoading = true))

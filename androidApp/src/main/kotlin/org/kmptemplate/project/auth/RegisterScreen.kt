@@ -31,16 +31,12 @@ import org.kmptemplate.project.auth.mvi.RegisterStore
 
 @Composable
 fun RegisterScreen(
-    store: RegisterStore = remember { RegisterStore() },
+    store: RegisterStore,
     onRegisterSuccess: (User) -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     val state by store.state.collectAsState()
-
-    DisposableEffect(store) {
-        onDispose { store.close() }
-    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),

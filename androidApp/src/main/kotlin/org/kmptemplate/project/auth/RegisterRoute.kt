@@ -7,23 +7,22 @@ import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.koin.androidx.compose.koinViewModel
 import org.kmptemplate.project.auth.data.AuthDataSource
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.auth.mvi.RegisterIntent
 import org.kmptemplate.project.auth.mvi.RegisterStore
 
-/**
- * Android Native entry point for RegisterScreen.
- * Delegates to the Multiplatform RegisterScreen from sharedUI.
- */
 @Composable
-fun AndroidRegisterScreen(
+fun RegisterRoute(
+    viewModel: RegisterViewModel = koinViewModel(),
     onRegisterSuccess: (User) -> Unit = {},
     onNavigateToLogin: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     RegisterScreen(
+        store = viewModel.store,
         onRegisterSuccess = onRegisterSuccess,
         onNavigateToLogin = onNavigateToLogin,
         onBack = onBack
@@ -53,14 +52,14 @@ private fun previewRegisterStore(shouldSucceed: Boolean = true): RegisterStore =
 
 @Preview(name = "Register · Empty", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidRegisterScreenEmptyPreview() {
+private fun RegisterEmptyPreview() {
     val store = remember { previewRegisterStore() }
     RegisterScreen(store = store)
 }
 
 @Preview(name = "Register · Filled", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidRegisterScreenFilledPreview() {
+private fun RegisterFilledPreview() {
     val store = remember {
         previewRegisterStore().apply {
             dispatch(RegisterIntent.NameChanged("Budi Santoso"))
@@ -75,7 +74,7 @@ private fun AndroidRegisterScreenFilledPreview() {
 
 @Preview(name = "Register · Validation Error", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidRegisterScreenErrorPreview() {
+private fun RegisterErrorPreview() {
     val store = remember {
         previewRegisterStore().apply {
             dispatch(RegisterIntent.NameChanged("Ab"))
@@ -90,7 +89,7 @@ private fun AndroidRegisterScreenErrorPreview() {
 
 @Preview(name = "Register · Success", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidRegisterScreenSuccessPreview() {
+private fun RegisterSuccessPreview() {
     val store = remember {
         previewRegisterStore(shouldSucceed = true).apply {
             dispatch(RegisterIntent.NameChanged("Budi Santoso"))
@@ -111,7 +110,7 @@ private fun AndroidRegisterScreenSuccessPreview() {
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
-private fun AndroidRegisterScreenDarkPreview() {
+private fun RegisterDarkPreview() {
     val store = remember { previewRegisterStore() }
     RegisterScreen(store = store)
 }

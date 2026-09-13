@@ -9,7 +9,7 @@ final class LoginViewModel: ObservableObject {
     private let store: LoginStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: LoginStore = LoginMVIKt.createLoginStore()) {
+    init(store: LoginStore = KoinHelpersKt.getLoginStore()) {
         self.store = store
         self.state = store.state.value
 

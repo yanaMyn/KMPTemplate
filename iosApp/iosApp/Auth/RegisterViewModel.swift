@@ -9,7 +9,7 @@ final class RegisterViewModel: ObservableObject {
     private let store: RegisterStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: RegisterStore = RegisterMVIKt.createRegisterStore()) {
+    init(store: RegisterStore = KoinHelpersKt.getRegisterStore()) {
         self.store = store
         self.state = store.state.value
 

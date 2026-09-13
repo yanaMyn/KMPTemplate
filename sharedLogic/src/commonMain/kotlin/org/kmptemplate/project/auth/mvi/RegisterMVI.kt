@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kmptemplate.project.auth.data.AuthRepository
-import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 
 data class RegisterState(
@@ -58,10 +57,8 @@ sealed class RegisterIntent {
     data object Reset : RegisterIntent()
 }
 
-fun createRegisterStore(): RegisterStore = RegisterStore()
-
 class RegisterStore(
-    private val repository: AuthRepository = AuthRepositoryImpl(),
+    private val repository: AuthRepository,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     private val _state = MutableStateFlow(RegisterState())

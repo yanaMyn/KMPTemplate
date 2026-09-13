@@ -9,7 +9,7 @@ final class WalkthroughViewModel: ObservableObject {
     private let store: WalkthroughStore
     private var stateTask: Task<Void, Never>?
 
-    init(store: WalkthroughStore = WalkthroughMVIKt.createWalkthroughStore()) {
+    init(store: WalkthroughStore = KoinHelpersKt.getWalkthroughStore()) {
         self.store = store
         self.state = store.state.value
 

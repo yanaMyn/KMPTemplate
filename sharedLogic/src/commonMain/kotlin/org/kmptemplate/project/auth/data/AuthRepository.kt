@@ -8,7 +8,7 @@ interface AuthRepository {
 }
 
 class AuthRepositoryImpl(
-    private val dataSource: AuthDataSource = RemoteAuthDataSource()
+    private val dataSource: AuthDataSource
 ) : AuthRepository {
     override suspend fun login(email: String, password: String): Result<User> {
         return dataSource.authenticate(email, password)

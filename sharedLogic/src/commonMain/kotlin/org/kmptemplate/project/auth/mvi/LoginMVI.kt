@@ -11,7 +11,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.kmptemplate.project.auth.data.AuthRepository
-import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
 
 data class LoginState(
@@ -42,12 +41,8 @@ sealed class LoginIntent {
     data object Reset : LoginIntent()
 }
 
-/** Factory untuk konsumen native (Swift) — menghindari batasan Kotlin/Native yang tidak
- * mengekspor konstruktor tanpa argumen ketika seluruh parameter memiliki default value. */
-fun createLoginStore(): LoginStore = LoginStore()
-
 class LoginStore(
-    private val repository: AuthRepository = AuthRepositoryImpl(),
+    private val repository: AuthRepository,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 ) {
     private val _state = MutableStateFlow(LoginState())

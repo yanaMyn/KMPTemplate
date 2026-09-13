@@ -29,18 +29,20 @@ import org.kmptemplate.project.auth.mvi.LoginIntent
 import org.kmptemplate.project.auth.mvi.LoginState
 import org.kmptemplate.project.auth.mvi.LoginStore
 
+/**
+ * Layar Login (stateless secara identitas store).
+ *
+ * Pemanggil (Android ViewModel / iOS `@StateObject` / preview scaffolding) bertanggung
+ * jawab atas siklus hidup `store` — screen tidak memanggil `store.close()`.
+ */
 @Composable
 fun LoginScreen(
-    store: LoginStore = remember { LoginStore() },
+    store: LoginStore,
     onLoginSuccess: (User) -> Unit = {},
     onNavigateToRegister: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     val state by store.state.collectAsState()
-
-    DisposableEffect(store) {
-        onDispose { store.close() }
-    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),

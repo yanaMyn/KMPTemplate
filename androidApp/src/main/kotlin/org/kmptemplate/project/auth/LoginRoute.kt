@@ -7,6 +7,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import org.koin.androidx.compose.koinViewModel
 import org.kmptemplate.project.auth.data.AuthDataSource
 import org.kmptemplate.project.auth.data.AuthRepositoryImpl
 import org.kmptemplate.project.auth.model.User
@@ -14,21 +15,34 @@ import org.kmptemplate.project.auth.mvi.LoginIntent
 import org.kmptemplate.project.auth.mvi.LoginStore
 
 /**
- * Android Native entry point for LoginScreen.
- * Delegates to the Multiplatform LoginScreen from sharedUI.
+ * Stateful "route" untuk Login — pintu masuk yang ditunjuk oleh navigator (App / NavHost).
+ *
+ * `viewModel` di-declare sebagai parameter dengan default `koinViewModel()` supaya:
+ * 1. UI test dapat mengoper ViewModel palsu (`LoginRoute(viewModel = fake)`),
+ * 2. Signature langsung menampilkan dependency graph route ini.
+ *
+ * Store bertahan config change karena dimiliki `LoginViewModel` (yang di-scope ke
+ * `ViewModelStore` host); `LoginViewModel.onCleared()` menutup CoroutineScope store.
  */
 @Composable
-fun AndroidLoginScreen(
+fun LoginRoute(
+    viewModel: LoginViewModel = koinViewModel(),
     onLoginSuccess: (User) -> Unit = {},
+    onNavigateToRegister: () -> Unit = {},
     onBack: () -> Unit = {}
 ) {
     LoginScreen(
+        store = viewModel.store,
         onLoginSuccess = onLoginSuccess,
+        onNavigateToRegister = onNavigateToRegister,
         onBack = onBack
     )
 }
 
 // region Preview scaffolding
+// Preview mem-bypass ViewModel/Koin dan langsung memberi `LoginScreen` sebuah
+// store yang diseed pakai fake data source — ini yang bikin @Preview bisa render
+// tanpa `Application` / `ViewModelStoreOwner` / Koin container.
 
 private class PreviewLoginAuthDataSource(
     private val shouldSucceed: Boolean = true
@@ -53,17 +67,17 @@ private fun previewLoginStore(shouldSucceed: Boolean = true): LoginStore = Login
 
 @Preview(name = "Login · Empty", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidLoginScreenEmptyPreview() {
+private fun LoginEmptyPreview() {
     val store = remember { previewLoginStore() }
     LoginScreen(store = store)
 }
 
 @Preview(name = "Login · Filled", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidLoginScreenFilledPreview() {
+private fun LoginFilledPreview() {
     val store = remember {
         previewLoginStore().apply {
-            dispatch(LoginIntent.EmailChanged("admin@kmptemplate.org"))
+            dispatch(LoginIntent.EmailChanged("Sincere@april.biz"))
             dispatch(LoginIntent.PasswordChanged("Password123!"))
         }
     }
@@ -72,7 +86,7 @@ private fun AndroidLoginScreenFilledPreview() {
 
 @Preview(name = "Login · Validation Error", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidLoginScreenErrorPreview() {
+private fun LoginErrorPreview() {
     val store = remember {
         previewLoginStore().apply {
             dispatch(LoginIntent.EmailChanged("bukan-email"))
@@ -85,10 +99,10 @@ private fun AndroidLoginScreenErrorPreview() {
 
 @Preview(name = "Login · Success", showBackground = true, showSystemUi = true)
 @Composable
-private fun AndroidLoginScreenSuccessPreview() {
+private fun LoginSuccessPreview() {
     val store = remember {
         previewLoginStore(shouldSucceed = true).apply {
-            dispatch(LoginIntent.EmailChanged("admin@kmptemplate.org"))
+            dispatch(LoginIntent.EmailChanged("Sincere@april.biz"))
             dispatch(LoginIntent.PasswordChanged("Password123!"))
             dispatch(LoginIntent.SubmitLogin)
         }
@@ -103,7 +117,7 @@ private fun AndroidLoginScreenSuccessPreview() {
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
-private fun AndroidLoginScreenDarkPreview() {
+private fun LoginDarkPreview() {
     val store = remember { previewLoginStore() }
     LoginScreen(store = store)
 }

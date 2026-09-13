@@ -13,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import org.kmptemplate.project.ui.theme.AppTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,7 +29,7 @@ import org.kmptemplate.project.walkthrough.WalkthroughRoute
 
 @Composable
 fun App() {
-    MaterialTheme {
+    AppTheme {
         var showWalkthrough by remember { mutableStateOf(false) }
         var showLogin by remember { mutableStateOf(false) }
         var showRegister by remember { mutableStateOf(false) }

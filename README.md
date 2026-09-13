@@ -38,6 +38,48 @@ This is Google's recommended **stateful ↔ stateless split** for Compose ([docs
 
 `viewModel` is a **parameter with default**, not a body-local `val`, so UI tests can override it: `LoginRoute(viewModel = fakeVm)`.
 
+## UI Component Toolkit
+
+Both platforms ship a small **App-prefixed component library** with matching APIs. Feature screens compose these primitives — no `OutlinedTextField` / `Button` / `TextField` / `SecureField` used directly outside the toolkit.
+
+**Android** — `androidApp/src/main/kotlin/org/kmptemplate/project/ui/`
+```
+ui/
+├── theme/AppTheme.kt              AppTheme wrapper + AppSpacing/AppShapes/AppSizes tokens
+└── components/
+    ├── AppTextField.kt            outlined field, rounded, error inline
+    ├── AppPasswordField.kt        adds Sembunyikan/Lihat toggle
+    ├── AppPrimaryButton.kt        full-width, loading spinner inline
+    ├── AppErrorBanner.kt          animated show/hide on message: String?
+    ├── AppHeaderIcon.kt           circle bg + emoji + title + subtitle
+    └── AppSuccessCard.kt          check icon + title/subtitle/caption + primary/secondary buttons
+```
+
+**iOS** — `iosApp/iosApp/UI/`
+```
+UI/
+├── Theme/AppTheme.swift           AppSpacing/AppCornerRadius/AppSizes + AppleScaleButtonStyle
+└── Components/
+    ├── AppTextField.swift         adaptive border, error inline, generic FocusState
+    ├── AppPasswordField.swift     eye/eye-slash toggle
+    ├── AppPrimaryButton.swift     (+ AppSecondaryButton)
+    ├── AppErrorBanner.swift
+    ├── AppHeaderIcon.swift
+    └── AppSuccessCard.swift
+```
+
+The rules for building & reusing these components — parameter ordering, state hoisting, design tokens, preview scaffolding — are documented in `.agents/rules/ui-component-guidelines.md`. Read it before adding a new component or screen.
+
+**TL;DR guidelines:**
+1. Route (stateful) + Screen (stateless) split per feature.
+2. **No UI duplication.** Every visual pattern that appears in ≥2 places must be promoted to `ui/components/`. Feature `*Screen.kt` / `*View.swift` files should never contain raw `OutlinedTextField` / `SecureField` / `Button` — use the `App*` wrappers.
+3. All dimensions/shapes/sizes come from tokens in `ui/theme/`. No hardcoded `.dp`.
+4. Colors via `MaterialTheme.colorScheme.*` (Android) / semantic system colors (iOS).
+5. Leaf components take value + callback; they never call DI or navigation.
+6. Route's `viewModel` is a parameter default, not a body-local `val`.
+7. Every component file has ≥1 `@Preview` / `#Preview`.
+8. Screen previews use a `previewFooStore()` with a fake data source, not the real Koin container.
+
 ## Running
 
 ```bash

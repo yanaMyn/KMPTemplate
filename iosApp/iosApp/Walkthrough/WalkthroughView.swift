@@ -174,65 +174,20 @@ struct WalkthroughView: View {
     
     // MARK: - Completed View
     private var completedView: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            
-            ZStack {
-                Circle()
-                    .fill(Color.accentColor.opacity(0.15))
-                    .frame(width: 100, height: 100)
-                
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 60, weight: .medium))
-                    .foregroundColor(.accentColor)
-            }
-            
-            Text("Siap Digunakan!")
-                .font(.title.weight(.bold))
-                .foregroundColor(.primary)
-            
-            Text("Anda telah menyelesaikan panduan awal. Selamat menjelajah aplikasi!")
-                .font(.body)
-                .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 32)
-            
-            Spacer()
-            
-            VStack(spacing: 12) {
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    onFinished?()
-                }) {
-                    Text("Masuk ke Beranda")
-                        .font(.headline.weight(.semibold))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .foregroundColor(.white)
-                        .background(Color.accentColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        AppSuccessCard(
+            title: "Siap Digunakan!",
+            subtitle: "Selamat!",
+            caption: "Anda telah menyelesaikan panduan awal. Selamat menjelajah aplikasi!",
+            primaryTitle: "Masuk ke Beranda",
+            onPrimary: { onFinished?() },
+            secondaryTitle: "Ulangi Panduan",
+            secondaryTint: .accentColor,
+            onSecondary: {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
+                    viewModel.onRestart()
                 }
-                .buttonStyle(AppleScaleButtonStyle())
-                
-                Button(action: {
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
-                        viewModel.onRestart()
-                    }
-                }) {
-                    Text("Ulangi Panduan")
-                        .font(.headline.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .foregroundColor(.secondary)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                }
-                .buttonStyle(AppleScaleButtonStyle())
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
-        }
+        )
     }
     
     private func getSfSymbol(for iconName: String) -> String {

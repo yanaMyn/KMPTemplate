@@ -1,11 +1,25 @@
 # GitHub Copilot Instructions for KMPTemplate
 
+KMPTemplate is a Kotlin Multiplatform project: `:sharedLogic` (KMP shared logic + Ktor + Koin + StateFlow MVI) + `:androidApp` (Jetpack Compose UI) + `iosApp/` (SwiftUI). iOS bridges via SKIE (`Flow` → `AsyncSequence`, `suspend` → `async`, sealed → enum).
+
 Read these rules files FIRST before performing any action:
 
 1. **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
 2. **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
-3. **Apple HIG Standards:** `.agents/rules/apple-hig-guidelines.md`
-4. **Planner:** `.agents/skills/kmp-planner/SKILL.md`
-5. **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
-6. **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
-7. **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`
+3. **UI Component Guidelines:** `.agents/rules/ui-component-guidelines.md` — Route/Screen split, design tokens, no UI duplication, component API conventions
+4. **Apple HIG Standards:** `.agents/rules/apple-hig-guidelines.md`
+5. **Planner:** `.agents/skills/kmp-planner/SKILL.md`
+6. **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
+7. **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
+8. **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`
+
+## Definition of Done
+
+A task is not complete until all three commands return `PASSED`:
+
+```bash
+./gradlew :sharedLogic:build              # unit tests + Konsist architecture tests
+./gradlew :androidApp:assembleDebug       # Android APK compiles
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' build
+```

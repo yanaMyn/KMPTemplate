@@ -1,33 +1,49 @@
 package org.kmptemplate.project.auth
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.kmptemplate.project.auth.model.User
 import org.kmptemplate.project.auth.mvi.LoginIntent
 import org.kmptemplate.project.auth.mvi.LoginState
 import org.kmptemplate.project.auth.mvi.LoginStore
+import org.kmptemplate.project.ui.components.AppErrorBanner
+import org.kmptemplate.project.ui.components.AppHeaderIcon
+import org.kmptemplate.project.ui.components.AppPasswordField
+import org.kmptemplate.project.ui.components.AppPrimaryButton
+import org.kmptemplate.project.ui.components.AppSuccessCard
+import org.kmptemplate.project.ui.components.AppTextField
+import org.kmptemplate.project.ui.theme.AppShapes
+import org.kmptemplate.project.ui.theme.AppSpacing
+import androidx.compose.runtime.collectAsState
 
 /**
  * Layar Login (stateless secara identitas store).
@@ -49,10 +65,16 @@ fun LoginScreen(
         color = MaterialTheme.colorScheme.background
     ) {
         if (state.isSuccess && state.loggedInUser != null) {
-            LoginSuccessView(
-                user = state.loggedInUser!!,
-                onContinue = { onLoginSuccess(state.loggedInUser!!) },
-                onLogout = { store.dispatch(LoginIntent.Reset) }
+            val user = state.loggedInUser!!
+            AppSuccessCard(
+                emoji = "🎉",
+                title = "Login Berhasil!",
+                subtitle = "Selamat datang kembali, ${user.name}!",
+                caption = "Email: ${user.email}",
+                primaryText = "Lanjutkan ke Aplikasi",
+                onPrimary = { onLoginSuccess(user) },
+                secondaryText = "Keluar (Logout)",
+                onSecondary = { store.dispatch(LoginIntent.Reset) },
             )
         } else {
             LoginFormView(
@@ -80,175 +102,73 @@ private fun LoginFormView(
             .fillMaxSize()
             .safeContentPadding()
             .verticalScroll(scrollState)
-            .padding(24.dp),
+            .padding(AppSpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Top Back Button
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Start
         ) {
-            TextButton(onClick = onBack) {
-                Text("← Kembali")
-            }
+            TextButton(onClick = onBack) { Text("← Kembali") }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.lg))
 
-        // App/Header Icon
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "🔐", fontSize = 38.sp)
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        Text(
-            text = "Selamat Datang Kembali",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
+        AppHeaderIcon(
+            emoji = "🔐",
+            title = "Selamat Datang Kembali",
+            subtitle = "Masuk ke akun KMPTemplate Anda"
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.xl + AppSpacing.xs))
 
-        Text(
-            text = "Masuk ke akun KMPTemplate Anda",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
+        AppErrorBanner(message = state.generalError)
 
-        Spacer(modifier = Modifier.height(28.dp))
-
-        // Error Banner (if any)
-        AnimatedVisibility(visible = state.generalError != null) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "⚠️", fontSize = 20.sp)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = state.generalError ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-        }
-
-        // Email Input Field
-        OutlinedTextField(
+        AppTextField(
             value = state.email,
             onValueChange = { onIntent(LoginIntent.EmailChanged(it)) },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Email") },
-            placeholder = { Text("contoh: admin@kmptemplate.org") },
-            singleLine = true,
-            isError = state.emailError != null,
-            supportingText = {
-                state.emailError?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error)
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                imeAction = ImeAction.Next
-            ),
+            label = "Email",
+            placeholder = "contoh: admin@kmptemplate.org",
+            errorMessage = state.emailError,
+            keyboardType = KeyboardType.Email,
+            imeAction = ImeAction.Next,
             keyboardActions = KeyboardActions(
                 onNext = { focusManager.moveFocus(FocusDirection.Down) }
             ),
-            shape = RoundedCornerShape(12.dp)
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.md))
 
-        // Password Input Field
-        OutlinedTextField(
+        AppPasswordField(
             value = state.password,
             onValueChange = { onIntent(LoginIntent.PasswordChanged(it)) },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Kata Sandi") },
-            placeholder = { Text("Minimal 6 karakter") },
-            singleLine = true,
-            isError = state.passwordError != null,
-            visualTransformation = if (state.isPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                TextButton(onClick = { onIntent(LoginIntent.TogglePasswordVisibility) }) {
-                    Text(
-                        text = if (state.isPasswordVisible) "Sembunyikan" else "Lihat",
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            },
-            supportingText = {
-                state.passwordError?.let {
-                    Text(text = it, color = MaterialTheme.colorScheme.error)
-                }
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Password,
-                imeAction = ImeAction.Done
-            ),
+            label = "Kata Sandi",
+            placeholder = "Minimal 6 karakter",
+            errorMessage = state.passwordError,
+            isVisible = state.isPasswordVisible,
+            onToggleVisibility = { onIntent(LoginIntent.TogglePasswordVisibility) },
+            imeAction = ImeAction.Done,
             keyboardActions = KeyboardActions(
                 onDone = {
                     focusManager.clearFocus()
                     onIntent(LoginIntent.SubmitLogin)
                 }
             ),
-            shape = RoundedCornerShape(12.dp)
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.xl))
 
-        // Submit Button
-        Button(
+        AppPrimaryButton(
+            text = "Masuk",
             onClick = {
                 focusManager.clearFocus()
                 onIntent(LoginIntent.SubmitLogin)
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            enabled = !state.isLoading,
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            if (state.isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(22.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.5.dp
-                )
-            } else {
-                Text(
-                    text = "Masuk",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-            }
-        }
+            isLoading = state.isLoading,
+        )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.md))
 
-        // Cross-link to Register
         TextButton(onClick = onNavigateToRegister) {
             Text(
                 text = "Belum punya akun? Daftar",
@@ -256,130 +176,58 @@ private fun LoginFormView(
             )
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(AppSpacing.lg + AppSpacing.xs))
 
-        // Quick Demo Credentials Section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Akun Demo Cepat (Klik untuk isi)",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilledTonalButton(
-                        onClick = {
-                            onIntent(LoginIntent.EmailChanged("Sincere@april.biz"))
-                            onIntent(LoginIntent.PasswordChanged("Password123!"))
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Leanne Graham", fontSize = 12.sp)
-                    }
-                    FilledTonalButton(
-                        onClick = {
-                            onIntent(LoginIntent.EmailChanged("Shanna@melissa.tv"))
-                            onIntent(LoginIntent.PasswordChanged("Password123!"))
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Text("Ervin Howell", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
+        DemoCredentialsCard(onIntent = onIntent)
     }
 }
 
 @Composable
-private fun LoginSuccessView(
-    user: User,
-    onContinue: () -> Unit,
-    onLogout: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeContentPadding()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+private fun DemoCredentialsCard(onIntent: (LoginIntent) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        shape = RoundedCornerShape(AppShapes.cornerLarge),
     ) {
-        Box(
-            modifier = Modifier
-                .size(90.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = "🎉", fontSize = 42.sp)
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text(
-            text = "Login Berhasil!",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Text(
-            text = "Selamat datang kembali, ${user.name}!",
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "Email: ${user.email}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(modifier = Modifier.height(36.dp))
-
-        Button(
-            onClick = onContinue,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(14.dp)
+                .padding(AppSpacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Lanjutkan ke Aplikasi", fontWeight = FontWeight.SemiBold)
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = onLogout,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(52.dp),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Text("Keluar (Logout)")
+            Text(
+                text = "Akun Demo Cepat (Klik untuk isi)",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AppSpacing.sm)
+            ) {
+                FilledTonalButton(
+                    onClick = {
+                        onIntent(LoginIntent.EmailChanged("Sincere@april.biz"))
+                        onIntent(LoginIntent.PasswordChanged("Password123!"))
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(AppShapes.cornerSmall)
+                ) {
+                    Text("Leanne Graham", fontSize = 12.sp)
+                }
+                FilledTonalButton(
+                    onClick = {
+                        onIntent(LoginIntent.EmailChanged("Shanna@melissa.tv"))
+                        onIntent(LoginIntent.PasswordChanged("Password123!"))
+                    },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(AppShapes.cornerSmall)
+                ) {
+                    Text("Ervin Howell", fontSize = 12.sp)
+                }
+            }
         }
     }
 }

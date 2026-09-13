@@ -229,64 +229,15 @@ private fun WalkthroughCompletedView(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .safeContentPadding()
-                .padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "🎉", fontSize = 48.sp)
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Siap Digunakan!",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Anda telah menyelesaikan panduan awal. Selamat menjelajah aplikasi!",
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(36.dp))
-
-            Button(
-                onClick = onContinue,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Masuk ke Beranda", fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            OutlinedButton(
-                onClick = onRestart,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text("Ulangi Panduan")
-            }
-        }
+        org.kmptemplate.project.ui.components.AppSuccessCard(
+            emoji = "🎉",
+            title = "Siap Digunakan!",
+            subtitle = "Selamat!",
+            caption = "Anda telah menyelesaikan panduan awal. Selamat menjelajah aplikasi!",
+            primaryText = "Masuk ke Beranda",
+            onPrimary = onContinue,
+            secondaryText = "Ulangi Panduan",
+            onSecondary = onRestart,
+        )
     }
 }

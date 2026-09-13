@@ -1,39 +1,114 @@
-// LOCATION: iosApp/iosApp/Features/FeatureScreen.swift
+// ============================================================================
+// LOCATION: iosApp/iosApp/${FeatureName}/
+// ============================================================================
+
+// ---------- File 1: ${FeatureName}ViewModel.swift ---------------------------
+
+import Foundation
+import SwiftUI
+import SharedLogic
+
+@MainActor
+final class ${FeatureName}ViewModel: ObservableObject {
+    @Published var state: ${FeatureName}State
+
+    private let store: ${FeatureName}Store
+    private var stateTask: Task<Void, Never>?
+
+    init(store: ${FeatureName}Store = KoinHelpersKt.get${FeatureName}Store()) {
+        self.store = store
+        self.state = store.state.value
+
+        // SKIE membridge Kotlin StateFlow ke AsyncSequence — loop mengalir setiap update state
+        self.stateTask = Task { [weak self] in
+            guard let self else { return }
+            for await newState in self.store.state {
+                self.state = newState
+            }
+        }
+    }
+
+    deinit {
+        stateTask?.cancel()
+        store.close()   // wajib — menutup CoroutineScope internal store
+    }
+
+    // ---- Intent forwarders (satu method per user action) ----
+
+    func onSubmit() {
+        store.dispatch(intent: ${FeatureName}Intent.LoadData())
+    }
+}
+
+// ---------- File 2: ${FeatureName}View.swift --------------------------------
 
 import SwiftUI
-import shared // Mengimpor modul shared KMP
+import SharedLogic
 
-struct \(FeatureName)Screen: View {
-    // Mengamati State dari Swift wrapper/ViewModel yang menjembatani KMP Flow
-    @ObservedObject var viewModel: \(FeatureName)ObservableViewModel
+struct ${FeatureName}View: View {
+    @StateObject private var viewModel = ${FeatureName}ViewModel()
+    var onBack: (() -> Void)? = nil
 
     var body: some View {
         NavigationView {
-            ZconfigureView()
-                .navigationTitle("\(FeatureName)")
-        }
-    }
+            ZStack {
+                Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
 
-    @ViewBuilder
-    private func ZconfigureView() -> some View {
-        if viewModel.state.isLoading {
-            ProgressView()
-        } else {
-            VStack(spacing: 16) {
-                Text("Data: \(viewModel.state.data)")
+                ScrollView {
+                    VStack(spacing: AppSpacing.xl) {
+                        AppHeaderIcon(
+                            systemImage: "sparkles",
+                            title: "${FeatureName}",
+                            subtitle: "Deskripsi fitur di sini"
+                        )
 
-                Button(action: {
-                    // Mengirim Intent balik ke Shared Logic MVI Kotlin
-                    viewModel.dispatch(intent: \(FeatureName)Intent.RefreshData())
-                }) {
-                    Text("Refresh Data")
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
+                        AppErrorBanner(message: viewModel.state.errorMessage)
+
+                        // ... UI konten fitur di sini, pakai komponen dari iosApp/iosApp/UI/Components ...
+
+                        AppPrimaryButton(
+                            title: "Aksi Utama",
+                            isLoading: viewModel.state.isLoading,
+                            action: { viewModel.onSubmit() }
+                        )
+                        .padding(.top, AppSpacing.xs)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, AppSpacing.md)
                 }
             }
-            .padding()
+            .navigationTitle("${FeatureName}")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if let onBack {
+                        Button(action: {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onBack()
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.left").fontWeight(.semibold)
+                                Text("Kembali")
+                            }
+                            .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+            }
+        }
+        .navigationViewStyle(.stack)
+        .onChange(of: viewModel.state.errorMessage) { error in
+            if error != nil {
+                UINotificationFeedbackGenerator().notificationOccurred(.error)
+            }
         }
     }
 }
+
+// ---- HIG Requirements (lihat .agents/rules/apple-hig-guidelines.md) ----
+// - @FocusState untuk keyboard flow.
+// - Haptic feedback (UIImpactFeedbackGenerator / UINotificationFeedbackGenerator).
+// - Spring animation (.spring(response:, dampingFraction:)).
+// - Minimum tap target 44pt.
+// - Design tokens: AppSpacing / AppCornerRadius / AppSizes dari UI/Theme/AppTheme.swift.
+// - Warna: system colors (Color.accentColor, Color(uiColor: .systemGroupedBackground)).

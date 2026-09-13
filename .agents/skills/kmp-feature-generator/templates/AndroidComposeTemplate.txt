@@ -1,46 +1,134 @@
-// LOCATION: androidApp/src/main/java/com/yourpackage/feature/FeatureScreen.kt
+// ============================================================================
+// LOCATION: androidApp/src/main/kotlin/org/kmptemplate/project/${feature}/
+// ============================================================================
 
-package com.yourpackage.feature
+// ---------- File 1: ${FeatureName}ViewModel.kt ------------------------------
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+package org.kmptemplate.project.${feature}
+
+import androidx.lifecycle.ViewModel
+import org.kmptemplate.project.${feature}.mvi.${FeatureName}Store
+
+/** Thin ViewModel wrapper — bertahan config change lewat ViewModelStore host,
+ *  menutup CoroutineScope store lewat `onCleared`. */
+class ${FeatureName}ViewModel(val store: ${FeatureName}Store) : ViewModel() {
+    override fun onCleared() {
+        store.close()
+    }
+}
+
+// ---------- File 2: ${FeatureName}Route.kt (STATEFUL) -----------------------
+
+package org.kmptemplate.project.${feature}
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import org.koin.androidx.compose.koinViewModel
+import org.kmptemplate.project.${feature}.data.${FeatureName}DataSource
+import org.kmptemplate.project.${feature}.data.${FeatureName}RepositoryImpl
+import org.kmptemplate.project.${feature}.mvi.${FeatureName}Store
+
+/**
+ * Stateful root — resolves ViewModel dari Koin dan hand off store ke Screen.
+ * `viewModel` sebagai parameter default supaya UI test bisa mengoper fake.
+ */
+@Composable
+fun ${FeatureName}Route(
+    viewModel: ${FeatureName}ViewModel = koinViewModel(),
+    onBack: () -> Unit = {},
+) {
+    ${FeatureName}Screen(store = viewModel.store, onBack = onBack)
+}
+
+// Preview scaffolding — memakai fake data source & Unconfined dispatcher
+// agar submit path mencapai state terminal secara sinkron.
+
+private class Preview${FeatureName}DataSource : ${FeatureName}DataSource {
+    // implementasi fake yang mengembalikan data statis
+}
+
+private fun preview${FeatureName}Store(): ${FeatureName}Store = ${FeatureName}Store(
+    repository = ${FeatureName}RepositoryImpl(Preview${FeatureName}DataSource()),
+    scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+)
+
+@Preview(name = "${FeatureName} · Default", showBackground = true, showSystemUi = true)
+@Composable
+private fun ${FeatureName}DefaultPreview() {
+    val store = remember { preview${FeatureName}Store() }
+    ${FeatureName}Screen(store = store)
+}
+
+// ---------- File 3: ${FeatureName}Screen.kt (STATELESS) ---------------------
+
+package org.kmptemplate.project.${feature}
+
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import org.kmptemplate.project.${feature}.mvi.${FeatureName}Intent
+import org.kmptemplate.project.${feature}.mvi.${FeatureName}Store
+import org.kmptemplate.project.ui.components.AppErrorBanner
+import org.kmptemplate.project.ui.components.AppHeaderIcon
+import org.kmptemplate.project.ui.components.AppPrimaryButton
+import org.kmptemplate.project.ui.theme.AppSpacing
 
+/**
+ * Stateless — menerima store, render state.
+ * DILARANG: koinViewModel, koinInject, navigation, store.close().
+ * WAJIB: pakai AppSpacing/AppShapes/AppSizes token, komponen App*.
+ */
 @Composable
 fun ${FeatureName}Screen(
-    // State dari Shared Logic KMP (MVI State)
-    state: ${FeatureName}State,
-    // Callback untuk mengirim aksi balik ke Shared Logic (MVI Intent)
-    onIntent: (${FeatureName}Intent) -> Unit
+    store: ${FeatureName}Store,
+    onBack: () -> Unit = {},
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("${FeatureName}") })
-        }
-    ) { paddingValues ->
-        Box(
+    val state by store.state.collectAsState()
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
+                .safeContentPadding()
+                .padding(AppSpacing.xl),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (state.isLoading) {
-                CircularProgressIndicator()
-            } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(text = "Data: \${state.data}")
+            AppHeaderIcon(
+                emoji = "✨",
+                title = "${FeatureName}",
+                subtitle = "Deskripsi fitur di sini"
+            )
 
-                    Button(onClick = { onIntent(${FeatureName}Intent.RefreshData) }) {
-                        Text("Refresh Data")
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(AppSpacing.xl))
+
+            AppErrorBanner(message = state.errorMessage)
+
+            // ... UI konten fitur di sini, pakai komponen dari org.kmptemplate.project.ui.components ...
+
+            Spacer(modifier = Modifier.height(AppSpacing.xl))
+
+            AppPrimaryButton(
+                text = "Aksi Utama",
+                onClick = { store.dispatch(${FeatureName}Intent.LoadData) },
+                isLoading = state.isLoading,
+            )
         }
     }
 }

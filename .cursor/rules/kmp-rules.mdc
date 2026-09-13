@@ -9,8 +9,20 @@ alwaysApply: true
 Read these rules files FIRST before performing any action:
 - **Safety & Access Blacklist:** `.agents/rules/agent-safety-guardrails.md`
 - **Architecture Guardrails:** `.agents/rules/kmp-architecture-guardrails.md`
+- **UI Component Guidelines:** `.agents/rules/ui-component-guidelines.md` — Route/Screen split, design tokens, no UI duplication, component API conventions
 - **Apple HIG:** `.agents/rules/apple-hig-guidelines.md`
 - **Planner:** `.agents/skills/kmp-planner/SKILL.md`
 - **Generator:** `.agents/skills/kmp-feature-generator/SKILL.md`
 - **Reviewer:** `.agents/skills/kmp-code-reviewer/SKILL.md`
 - **QA:** `.agents/skills/kmp-qa-runner/SKILL.md`
+
+## Definition of Done
+
+A task is not complete until all three commands return `PASSED`:
+
+```bash
+./gradlew :sharedLogic:build              # unit tests + Konsist architecture tests
+./gradlew :androidApp:assembleDebug       # Android APK compiles
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' build
+```

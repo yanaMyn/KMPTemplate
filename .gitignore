@@ -17,3 +17,11 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+# Abaikan folder output umum, KECUALI file grafik utamanya
+graphify-out/*
+!graphify-out/graph.json
+
+# Wajib abaikan file pelacak biaya agar tidak memicu churn commit
+graphify-out/cost.json
+
+.continue/

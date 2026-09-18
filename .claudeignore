@@ -1,0 +1,14 @@
+# Abaikan folder mentah data grafik Graphify agar Claude tidak boros token
+graphify-out/
+
+# Abaikan folder rahasia / lokal sensitif Anda
+private/
+
+# Abaikan folder build & sampah kompilasi KMP standar
+.gradle/
+.idea/
+.kotlin/
+build/
+**/build/
+iosApp/.pods/
+iosApp/Pods/

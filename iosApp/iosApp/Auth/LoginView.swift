@@ -8,52 +8,51 @@ struct LoginView: View {
     var onBack: (() -> Void)? = nil
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
+        Group {
+            if viewModel.state.isSuccess, let user = viewModel.state.loggedInUser {
+                AppVerifiedSuccessView(
+                    title: "Berhasil Diverifikasi",
+                    message: "Sekarang kamu bisa reset PIN dan terima info terbaru dari LinkAja melalui emailmu",
+                    buttonTitle: "Tutup",
+                    onClose: { onLoginSuccess?(user) }
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.9).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            } else {
+                NavigationView {
+                    ZStack {
+                        Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
 
-                if viewModel.state.isSuccess, let user = viewModel.state.loggedInUser {
-                    AppSuccessCard(
-                        title: "Login Berhasil!",
-                        subtitle: "Selamat datang kembali, \(user.name)",
-                        caption: "Email: \(user.email)",
-                        primaryTitle: "Lanjutkan ke Aplikasi",
-                        onPrimary: { onLoginSuccess?(user) },
-                        secondaryTitle: "Keluar (Logout)",
-                        onSecondary: { viewModel.onReset() }
-                    )
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.9).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-                } else {
-                    LoginFormSwiftUIView(
-                        viewModel: viewModel,
-                        onNavigateToRegister: onNavigateToRegister
-                    )
-                    .transition(.opacity)
-                }
-            }
-            .navigationTitle("Masuk")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if let onBack {
-                        Button(action: {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            onBack()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "chevron.left").fontWeight(.semibold)
-                                Text("Kembali")
+                        LoginFormSwiftUIView(
+                            viewModel: viewModel,
+                            onNavigateToRegister: onNavigateToRegister
+                        )
+                    }
+                    .navigationTitle("Masuk")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            if let onBack {
+                                Button(action: {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                    onBack()
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "chevron.left").fontWeight(.semibold)
+                                        Text("Kembali")
+                                    }
+                                    .foregroundColor(.accentColor)
+                                }
                             }
-                            .foregroundColor(.accentColor)
                         }
                     }
                 }
+                .navigationViewStyle(.stack)
+                .transition(.opacity)
             }
         }
-        .navigationViewStyle(.stack)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: viewModel.state.isSuccess)
         .onChange(of: viewModel.state.isSuccess) { isSuccess in
             if isSuccess { UINotificationFeedbackGenerator().notificationOccurred(.success) }

@@ -39,8 +39,8 @@ import org.kmptemplate.project.ui.components.AppErrorBanner
 import org.kmptemplate.project.ui.components.AppHeaderIcon
 import org.kmptemplate.project.ui.components.AppPasswordField
 import org.kmptemplate.project.ui.components.AppPrimaryButton
-import org.kmptemplate.project.ui.components.AppSuccessCard
 import org.kmptemplate.project.ui.components.AppTextField
+import org.kmptemplate.project.ui.components.AppVerifiedSuccessView
 import org.kmptemplate.project.ui.theme.AppShapes
 import org.kmptemplate.project.ui.theme.AppSpacing
 import androidx.compose.runtime.collectAsState
@@ -66,15 +66,11 @@ fun LoginScreen(
     ) {
         if (state.isSuccess && state.loggedInUser != null) {
             val user = state.loggedInUser!!
-            AppSuccessCard(
-                emoji = "🎉",
-                title = "Login Berhasil!",
-                subtitle = "Selamat datang kembali, ${user.name}!",
-                caption = "Email: ${user.email}",
-                primaryText = "Lanjutkan ke Aplikasi",
-                onPrimary = { onLoginSuccess(user) },
-                secondaryText = "Keluar (Logout)",
-                onSecondary = { store.dispatch(LoginIntent.Reset) },
+            AppVerifiedSuccessView(
+                title = "Berhasil Diverifikasi",
+                body = "Sekarang kamu bisa reset PIN dan terima info terbaru dari LinkAja melalui emailmu",
+                buttonText = "Tutup",
+                onClose = { onLoginSuccess(user) },
             )
         } else {
             LoginFormView(

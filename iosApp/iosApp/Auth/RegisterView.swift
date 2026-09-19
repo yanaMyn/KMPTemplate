@@ -8,53 +8,51 @@ struct RegisterView: View {
     var onBack: (() -> Void)? = nil
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
+        Group {
+            if viewModel.state.isSuccess, let user = viewModel.state.registeredUser {
+                AppVerifiedSuccessView(
+                    title: "Berhasil Diverifikasi",
+                    message: "Sekarang kamu bisa reset PIN dan terima info terbaru dari LinkAja melalui emailmu",
+                    buttonTitle: "Tutup",
+                    onClose: { onRegisterSuccess?(user) }
+                )
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.9).combined(with: .opacity),
+                    removal: .opacity
+                ))
+            } else {
+                NavigationView {
+                    ZStack {
+                        Color(uiColor: .systemGroupedBackground).ignoresSafeArea()
 
-                if viewModel.state.isSuccess, let user = viewModel.state.registeredUser {
-                    AppSuccessCard(
-                        title: "Pendaftaran Berhasil!",
-                        subtitle: "Selamat datang, \(user.name)",
-                        caption: "Email: \(user.email)",
-                        primaryTitle: "Lanjutkan ke Aplikasi",
-                        onPrimary: { onRegisterSuccess?(user) },
-                        secondaryTitle: "Daftar Akun Lain",
-                        secondaryTint: .accentColor,
-                        onSecondary: { viewModel.onReset() }
-                    )
-                    .transition(.asymmetric(
-                        insertion: .scale(scale: 0.9).combined(with: .opacity),
-                        removal: .opacity
-                    ))
-                } else {
-                    RegisterFormSwiftUIView(
-                        viewModel: viewModel,
-                        onNavigateToLogin: onNavigateToLogin
-                    )
-                    .transition(.opacity)
-                }
-            }
-            .navigationTitle("Daftar")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if let onBack {
-                        Button(action: {
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            onBack()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "chevron.left").fontWeight(.semibold)
-                                Text("Kembali")
+                        RegisterFormSwiftUIView(
+                            viewModel: viewModel,
+                            onNavigateToLogin: onNavigateToLogin
+                        )
+                    }
+                    .navigationTitle("Daftar")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            if let onBack {
+                                Button(action: {
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                    onBack()
+                                }) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "chevron.left").fontWeight(.semibold)
+                                        Text("Kembali")
+                                    }
+                                    .foregroundColor(.accentColor)
+                                }
                             }
-                            .foregroundColor(.accentColor)
                         }
                     }
                 }
+                .navigationViewStyle(.stack)
+                .transition(.opacity)
             }
         }
-        .navigationViewStyle(.stack)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: viewModel.state.isSuccess)
         .onChange(of: viewModel.state.isSuccess) { isSuccess in
             if isSuccess { UINotificationFeedbackGenerator().notificationOccurred(.success) }

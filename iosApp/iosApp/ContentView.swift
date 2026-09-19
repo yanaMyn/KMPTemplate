@@ -8,9 +8,10 @@ struct ContentView: View {
     @State private var pendingAuthSheet: AuthSheet? = nil
     @State private var loggedInUser: User? = nil
 
-    /// Layar autentikasi yang dapat ditampilkan sebagai sheet.
-    /// Satu modifier `.sheet(item:)` dipakai untuk keduanya agar tidak ada
-    /// dua sheet yang saling bertumpuk saat berpindah Login <-> Register.
+    /// Layar autentikasi yang ditampilkan sebagai full-screen cover (bukan sheet — supaya
+    /// tidak bisa di-swipe-dismiss dan benar-benar penuh sampai ke atas layar).
+    /// Satu modifier `.fullScreenCover(item:)` dipakai untuk keduanya agar tidak ada
+    /// dua cover yang saling bertumpuk saat berpindah Login <-> Register.
     private enum AuthSheet: String, Identifiable {
         case login
         case register
@@ -203,7 +204,7 @@ struct ContentView: View {
             .navigationTitle("KMPTemplate")
         }
         .navigationViewStyle(.stack)
-        .sheet(item: $authSheet, onDismiss: presentPendingAuthSheet) { sheet in
+        .fullScreenCover(item: $authSheet, onDismiss: presentPendingAuthSheet) { sheet in
             switch sheet {
             case .login:
                 LoginView(

@@ -35,8 +35,8 @@ import org.kmptemplate.project.ui.components.AppErrorBanner
 import org.kmptemplate.project.ui.components.AppHeaderIcon
 import org.kmptemplate.project.ui.components.AppPasswordField
 import org.kmptemplate.project.ui.components.AppPrimaryButton
-import org.kmptemplate.project.ui.components.AppSuccessCard
 import org.kmptemplate.project.ui.components.AppTextField
+import org.kmptemplate.project.ui.components.AppVerifiedSuccessView
 import org.kmptemplate.project.ui.theme.AppSpacing
 
 @Composable
@@ -54,15 +54,11 @@ fun RegisterScreen(
     ) {
         if (state.isSuccess && state.registeredUser != null) {
             val user = state.registeredUser!!
-            AppSuccessCard(
-                emoji = "🎉",
-                title = "Pendaftaran Berhasil!",
-                subtitle = "Selamat datang, ${user.name}!",
-                caption = "Email: ${user.email}",
-                primaryText = "Lanjutkan ke Aplikasi",
-                onPrimary = { onRegisterSuccess(user) },
-                secondaryText = "Daftar Akun Lain",
-                onSecondary = { store.dispatch(RegisterIntent.Reset) },
+            AppVerifiedSuccessView(
+                title = "Berhasil Diverifikasi",
+                body = "Sekarang kamu bisa reset PIN dan terima info terbaru dari LinkAja melalui emailmu",
+                buttonText = "Tutup",
+                onClose = { onRegisterSuccess(user) },
             )
         } else {
             RegisterFormView(
